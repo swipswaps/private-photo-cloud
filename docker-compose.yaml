@@ -21,4 +21,7 @@ services:
       PYTHONIOENCODING: utf-8
       PYTHONDONTWRITEBYTECODE: 1
       PYTHONWARNINGS: all
-    command: python3 -m http.server
+    volumes:
+      - .:/home/app
+    working_dir: /home/app
+    command: python3 manage.py runserver 0.0.0.0:80
