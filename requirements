@@ -1,0 +1,8 @@
+Django==1.10.2              # web framework, last stable version
+pytz==2016.7                # for Django
+
+djangorestframework==3.5.1  # REST framework
+Markdown==2.6.7             # for REST framework -- browsable API
+django-filter==0.15.3       # for REST framework -- filtering support
+
+Pillow==3.4.2               # image processing library
