@@ -9,8 +9,8 @@ RUN apk --no-cache upgrade\
 COPY requirements /tmp/requirements
 
 RUN apk --no-cache upgrade\
- && PKG="gcc musl-dev jpeg-dev openjpeg-dev zlib-dev tiff-dev freetype-dev lcms2-dev libwebp-dev"\
- && apk add --no-cache $PKG\
+ && PKG="gcc musl-dev postgresql-dev jpeg-dev openjpeg-dev zlib-dev tiff-dev freetype-dev lcms2-dev libwebp-dev"\
+ && apk add --no-cache postgresql $PKG\
  && python -m pip install -r /tmp/requirements\
  && apk del $PKG
 

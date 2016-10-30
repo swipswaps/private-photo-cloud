@@ -1,8 +1,8 @@
 version: '2'
 
 services:
-  db:
-    image: postgres:9.6 # TODO: Use 9.6.1
+  postgres:
+    image: postgres:9.6 # 9.6.1
     volumes:
       - ./data:/var/lib/postgresql/data
     environment:
@@ -15,12 +15,14 @@ services:
       context: .
       dockerfile: web.Dockerfile
     links:
-      - db
+      - postgres
     environment:
       PYTHONUNBUFFERED: 1
       PYTHONIOENCODING: utf-8
       PYTHONDONTWRITEBYTECODE: 1
       PYTHONWARNINGS: all
+      DATABASE_URL: postgres://user:password@postgres/app
+      DJANGO_SETTINGS_MODULE: private_photo_cloud.settings.container
     volumes:
       - .:/home/app
     working_dir: /home/app
