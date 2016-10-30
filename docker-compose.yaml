@@ -25,5 +25,6 @@ services:
       DJANGO_SETTINGS_MODULE: private_photo_cloud.settings.default
     volumes:
       - .:/home/app
+      - ./media:/home/app/media
     working_dir: /home/app
-    command: python3 manage.py runserver 0.0.0.0:80
+    command: ./manage.py runserver 0.0.0.0:80
