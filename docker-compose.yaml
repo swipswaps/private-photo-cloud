@@ -28,11 +28,14 @@ services:
       - .:/home/app
       - ./media:/home/app/media
     working_dir: /home/app
+    ports:
+      - 80:80
     command: sh -c "
       until psql -h postgres -U user app -c "--" 2>/dev/null; do
         echo "wait...";
         sleep 1;
       done;
       ./manage.py migrate;
+      ./manage.py shell -c 'from django.contrib.auth.models import User; u, _ = User.objects.get_or_create(username=\"admin\", is_superuser=True);u.set_password(\"password\");u.save()';
       ./manage.py runserver 0.0.0.0:80;
       "
