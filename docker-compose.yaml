@@ -22,7 +22,7 @@ services:
       PYTHONDONTWRITEBYTECODE: 1
       PYTHONWARNINGS: all
       DATABASE_URL: postgres://user:password@postgres/app
-      DJANGO_SETTINGS_MODULE: private_photo_cloud.settings.container
+      DJANGO_SETTINGS_MODULE: private_photo_cloud.settings.default
     volumes:
       - .:/home/app
     working_dir: /home/app
