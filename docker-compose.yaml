@@ -23,8 +23,16 @@ services:
       PYTHONWARNINGS: all
       DATABASE_URL: postgres://user:password@postgres/app
       DJANGO_SETTINGS_MODULE: private_photo_cloud.settings.default
+      PGPASSWORD: password
     volumes:
       - .:/home/app
       - ./media:/home/app/media
     working_dir: /home/app
-    command: ./manage.py runserver 0.0.0.0:80
+    command: sh -c "
+      until psql -h postgres -U user app -c "--" 2>/dev/null; do
+        echo "wait...";
+        sleep 1;
+      done;
+      ./manage.py migrate;
+      ./manage.py runserver 0.0.0.0:80;
+      "
