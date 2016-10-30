@@ -36,6 +36,6 @@ services:
         sleep 1;
       done;
       ./manage.py migrate;
-      ./manage.py shell -c 'from django.contrib.auth.models import User; u, _ = User.objects.get_or_create(username=\"admin\", is_superuser=True);u.set_password(\"password\");u.save()';
+      ./manage.py shell -c 'from django.contrib.auth.models import User; u, _ = User.objects.get_or_create(username=\"admin\", is_superuser=True);u.set_password(\"password\");u.save();';
       ./manage.py runserver 0.0.0.0:80;
       "
