@@ -2,6 +2,7 @@ Sources:
 - https://habrahabr.ru/post/275227/
 - https://habrahabr.ru/post/313234/
 - https://habrahabr.ru/post/309466/
+- https://habrahabr.ru/post/312022/
 
 JS
 * language: ES6 / ES7 / ES Next
@@ -29,6 +30,7 @@ JS
     process.on('uncaughtException', (err) => {
         console.log(`Uncaught exception. ${err}`);
     });
+
 * structure:
 	* controller
 	* helpers
@@ -44,7 +46,9 @@ JS
 		* HTML5 History API / pushState
 * AJAX: fetch
 * task runner: Gulp / Grunt
+* module manager: AMD / CommonJS
 * module bundler / pack: WebPack / Browserify / Rollup
+* other: SystemJS ?
 
 CSS
 * preprocessor: LESS/SASS/Stylus
