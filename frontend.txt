@@ -3,6 +3,7 @@ Sources:
 - https://habrahabr.ru/post/313234/
 - https://habrahabr.ru/post/309466/
 - https://habrahabr.ru/post/312022/
+- https://github.com/yegor-sytnyk/movies-list/
 
 JS
 * language: ES6 / ES7 / ES Next
