@@ -1,0 +1,51 @@
+Sources:
+- https://habrahabr.ru/post/275227/
+- https://habrahabr.ru/post/313234/
+- https://habrahabr.ru/post/309466/
+
+JS
+* language: ES6 / ES7 / ES Next
+* type of async: callbacks / promises / async + await
+* interpreter: node.js
+* package manager: npm
+* transpiling: Babel
+* libraries:
+	* lodash: helpers
+	* classnames
+	* autobind
+* errors handling
+
+    function AppError(errorCode, options) {
+        this.code = errorCode;
+
+        Error.captureStackTrace(this, this.constructor);
+
+        //merge data props into error object
+        return Object.assign(this, options);  
+    }
+
+    Object.setPrototypeOf(AppError.prototype, Error.prototype);
+
+    process.on('uncaughtException', (err) => {
+        console.log(`Uncaught exception. ${err}`);
+    });
+* structure:
+	* controller
+	* helpers
+	* routers
+	* views
+	* model
+* framework:
+	* React JS
+	* Redux (Flux implementation)
+	* JSX (template engine)
+	* React Router (router)
+		* by hashtag
+		* HTML5 History API / pushState
+* AJAX: fetch
+* task runner: Gulp / Grunt
+* module bundler / pack: WebPack / Browserify / Rollup
+
+CSS
+* preprocessor: LESS/SASS/Stylus
+* framework: bootstrap / foundation
