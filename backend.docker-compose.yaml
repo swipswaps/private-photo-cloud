@@ -39,15 +39,3 @@ services:
       ./manage.py shell -c 'from django.contrib.auth.models import User; u, _ = User.objects.get_or_create(username=\"admin\", is_superuser=True, is_staff=True, is_active=True);u.set_password(\"password\");u.save();';
       ./manage.py runserver 0.0.0.0:80;
       "
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend.Dockerfile
-    volumes:
-      - ./frontend/public:/home/app/public
-      - ./frontend/src:/home/app/src
-      - ./frontend/build:/home/app/build
-    working_dir: /home/app
-    ports:
-      - 3000:3000
-    command: npm start
