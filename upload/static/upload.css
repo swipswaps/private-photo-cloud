@@ -1,0 +1,26 @@
+.hidden {
+	display: none;
+}
+
+.fullscreen {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	border: dashed 1px red;
+	background-color: rgba(244, 245, 203, 0.7);
+	text-align: center;
+	pointer-events: none;
+	font-family: arial;
+	font-size: 10px;
+}
+
+.fullscreen > div {
+	pointer-events: none;
+	display: inline-block;
+	background-color: white;
+	margin: 5px;
+	padding: 5px;
+	border: dashed 1px red;
+}

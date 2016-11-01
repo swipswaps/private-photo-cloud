@@ -12,6 +12,16 @@
 <body>
 <h1>Upload</h1>
 
-<p>Please drop you files here, they would upload automatically.</p>
+<p>Please drop you files anywhere or <button onClick="document.getElementById('file_input').click(event); return false;">select files</button>
+<input type="file" multiple="multiple" id="file_input" onchange="uploadFiles(this.files)" style='display:none' /></p>
+
+<div class="hidden fullscreen" id="drop-info">
+	<div>
+		Drop files anywhere
+	</div>
+</div>
+
+<p>Upload would start automatically.</p>
+
 </body>
 </html>
