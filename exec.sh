@@ -1,2 +1,2 @@
 #!/bin/sh
-docker exec -ti privatephotocloud_web_1 $@
+docker exec -ti privatephotocloud_backend_1 $@
