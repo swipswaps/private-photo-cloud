@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 from django.conf import settings
 from django.db import migrations, models
 import django.db.models.deletion
-import photo.const
+import storage.const
 
 
 class Migration(migrations.Migration):
@@ -35,7 +35,7 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
-            bases=(photo.const.MediaConstMixin, models.Model),
+            bases=(storage.const.MediaConstMixin, models.Model),
         ),
         migrations.CreateModel(
             name='Shot',
@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
                 ('thumbnail_height', models.IntegerField(blank=True, null=True)),
                 ('uploader', models.ForeignKey(help_text='User that uploaded the media. He owns it.', on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
-            bases=(photo.const.ShotConstMixin, models.Model),
+            bases=(storage.const.ShotConstMixin, models.Model),
         ),
         migrations.CreateModel(
             name='ShotCategory',
@@ -77,16 +77,16 @@ class Migration(migrations.Migration):
                 ('is_default', models.BooleanField()),
                 ('mimetype', models.CharField(max_length=127)),
                 ('workflow_type', models.IntegerField(choices=[(1, 'Raw'), (2, 'Original'), (3, 'Processed')])),
-                ('shot', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='photo.Shot')),
+                ('shot', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='storage.Shot')),
             ],
             options={
                 'abstract': False,
             },
-            bases=(photo.const.MediaConstMixin, models.Model),
+            bases=(storage.const.MediaConstMixin, models.Model),
         ),
         migrations.AddField(
-            model_name='photo',
+            model_name='storage',
             name='shot',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='photo.Shot'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='storage.Shot'),
         ),
     ]
