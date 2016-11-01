@@ -85,7 +85,7 @@ class Migration(migrations.Migration):
             bases=(storage.const.MediaConstMixin, models.Model),
         ),
         migrations.AddField(
-            model_name='storage',
+            model_name='photo',
             name='shot',
             field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='storage.Shot'),
         ),
