@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8" />
+	<title>Upload</title>
+	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}upload.css" />
+	<script src="{{ STATIC_URL }}upload.js"></script>
+	<script>
+		var UPLOAD_SESSION_ID = "{{ UPLOAD_SESSION_ID|escapejs }}";
+	</script>
+</head>
+<body>
+<h1>Upload</h1>
+
+<p>Please drop you files here, they would upload automatically.</p>
+</body>
+</html>
