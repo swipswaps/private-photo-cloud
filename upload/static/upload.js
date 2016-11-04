@@ -2,7 +2,7 @@ var files2upload = [];
 var files2upload_size = 0;
 var files_w_error = [];
 var counter = 1;
-var UPLOAD_QUEUE = [];
+var UPLOAD_QUEUE = 0;
 var UPLOAD_QUEUE_SIZE = 3;
 
 function initUpload() {
@@ -148,32 +148,124 @@ function uploadFiles(files) {
 }
 
 function processUploadQueue() {
-    document.getElementById('upload_remaining').innerText = `${files2upload.length + files_w_error.length + UPLOAD_QUEUE.length} files: ${bytes2text(files2upload_size)}`;
-    while(files2upload.length && (UPLOAD_QUEUE.length < UPLOAD_QUEUE_SIZE)) {
-        var file = files2upload.shift();
-        UPLOAD_QUEUE.push(file);
+    document.getElementById('upload_remaining').innerText = `${files2upload.length + files_w_error.length + UPLOAD_QUEUE} files: ${bytes2text(files2upload_size)}`;
+
+    var num, file;
+
+    while(true) {
+        // try to acquire worker
+        num = ++UPLOAD_QUEUE;
+        if(num > UPLOAD_QUEUE_SIZE) {
+            // release worker
+            return UPLOAD_QUEUE--;
+        }
+        // worker is ready to process
+
+        // get task for work
+        file = files2upload.shift();
+
+        if( !file) {
+            // release worker
+            return UPLOAD_QUEUE--;
+        }
+
+        // process file
         uploadFile(file);
     }
 }
 
+/* TODO: Implement Promise.all that have concurrency limit + failsafe */
+
 function finishFileUpload(file) {
-    UPLOAD_QUEUE.splice(UPLOAD_QUEUE.indexOf(file), 1);
+    // release worker
+    UPLOAD_QUEUE--;
     files2upload_size -= file.file.size;
     document.getElementById(`upload_${file.id}`).remove();
     processUploadQueue();
 }
 
 function errorFileUpload(file) {
-    UPLOAD_QUEUE.splice(UPLOAD_QUEUE.indexOf(file), 1);
+    UPLOAD_QUEUE--;
     files_w_error.push(file);
     document.getElementById(`upload_${file.id}`).classList.add('error');
     processUploadQueue();
 }
 
-function uploadFile(file) {
+function get_file_sha1(file) {
     return new Promise(function(resolve, reject) {
-        setTimeout(function(){resolve(file)}, 1000);
-    }).then(finishFileUpload).catch(errorFileUpload);
+        var reader = new FileReader();
+        reader.onload = function(e){
+            crypto.subtle.digest("SHA-1", e.target.result).then(hex).then(resolve, reject);
+        };
+        reader.onerror = reject;
+        reader.readAsArrayBuffer(file.file);
+    }).then(function(digest){
+        file.sha1 = digest;
+        return file;
+    });
+}
+
+function check_for_duplicated(file) {
+    return fetch(`/upload/check-present-sha1/${file.sha1}`, {
+        credentials: 'same-origin'
+    }).then(function(response){
+        if(!response.ok){
+            throw Error('failed to check duplicates');
+        }
+        return response.json();
+    }).then(function(json){
+        file.present = json.present;
+        return file;
+    });
+}
+
+function getCookie(name) {
+    function escape(s) { return s.replace(/([.*+?\^${}()|\[\]\/\\])/g, '\\$1'); };
+    var match = document.cookie.match(RegExp('(?:^|;\\s*)' + escape(name) + '=([^;]*)'));
+    return match ? match[1] : null;
+}
+
+function upload_file(file) {
+    if(file.present) {
+        return file;
+    }
+
+    var data = new FormData();
+    data.set('session_id', UPLOAD_SESSION_ID);
+    data.set('name', file.file.name);
+    data.set('size', file.file.size);
+    data.set('type', file.file.type);
+    data.set('last_modified', file.file.lastModified);
+    data.set('sha1', file.sha1);
+    data.set('file', file.file);
+
+    return fetch('/upload/file/', {
+        method: 'POST',
+        credentials: 'same-origin',
+        body: data,
+        headers: {'X-CSRFToken': getCookie('csrftoken')}
+    }).then(function(response){
+        if(!response.ok) {
+            throw Error('Failed to upload');
+        }
+        return response.json().then(function(json){
+            console.log(json);
+            return file;
+        });
+    });
+}
+
+function uploadFile(file) {
+    return get_file_sha1(file
+    ).then(check_for_duplicated
+    ).then(upload_file
+    ).then(function(hashed_file) {
+        console.log(hashed_file);
+        return hashed_file;
+    }).then(finishFileUpload).catch(function(err){
+        console.error(err);
+        errorFileUpload(file);
+    });
 }
 
 window.addEventListener("DOMContentLoaded", initUpload, true);
