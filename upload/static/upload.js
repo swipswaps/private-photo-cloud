@@ -119,6 +119,44 @@ function sha1(text) {
       });
   }
 
+function renderUploadItem(file_obj) {
+    var div = document.createElement('div');
+
+    div.setAttribute('id', `upload_${file_obj.id}`);
+    div.classList.add('upload_file');
+
+    var content_type = file_obj.file.type.split('/')[0];
+
+    if(content_type) {
+        div.classList.add(`type_${content_type}`);
+    }
+
+    var title = [
+        file_obj.file.name,
+        bytes2text(file_obj.file.size),
+        file_obj.file.type,
+        `Updated at: ${date2text(new Date(file_obj.file.lastModified))}`
+    ].join("\n");
+
+    div.setAttribute('title', title);
+
+    var progress_div = document.createElement('div');
+    progress_div.setAttribute('id', `upload_${file_obj.id}_progress`);
+    progress_div.classList.add('progress');
+    div.appendChild(progress_div);
+
+    return div;
+}
+
+function renderUploadedItem(file_obj) {
+    var div = document.createElement('div');
+
+    div.setAttribute('id', `media_${file_obj.media.id}`);
+    div.classList.add('media');
+
+    return div;
+}
+
 function uploadFiles(files) {
     var upload_div = document.getElementById('images_to_upload');
 
@@ -129,32 +167,7 @@ function uploadFiles(files) {
         files2upload.push(file_obj);
         files2upload_size += file.size;
 
-        var div = document.createElement('div');
-
-        var content_type = file.type.split('/')[0];
-
-        div.setAttribute('id', `upload_${file_obj.id}`);
-        div.classList.add('upload_file');
-
-        if(content_type) {
-            div.classList.add(`type_${content_type}`);
-        }
-
-        var title = [
-            file.name,
-            bytes2text(file.size),
-            file.type,
-            `Updated at: ${date2text(new Date(file.lastModified))}`
-        ].join("\n");
-
-        div.setAttribute('title', title);
-
-        var progress_div = document.createElement('div');
-        progress_div.setAttribute('id', `upload_${file_obj.id}_progress`);
-        progress_div.classList.add('progress');
-        div.appendChild(progress_div);
-
-        upload_div.appendChild(div);
+        upload_div.appendChild(renderUploadItem(file_obj));
     }
 
     processUploadQueue();
@@ -200,6 +213,13 @@ function finishFileUpload(file) {
     UPLOAD_QUEUE--;
     files2upload_size -= file.file.size;
     document.getElementById(`upload_${file.id}`).remove();
+
+    var uploaded_div = document.getElementById('uploaded_images');
+
+    uploaded_div.classList.remove('hidden');
+
+    uploaded_div.appendChild(renderUploadedItem(file));
+
     processUploadQueue();
 }
 

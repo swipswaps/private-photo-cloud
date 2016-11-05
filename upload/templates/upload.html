@@ -23,11 +23,12 @@
 
 <p>Upload would start automatically.</p>
 
+{% spaceless %}
 <div id="upload_remaining"></div>
 
 <div class="hidden" id="images_to_upload"></div>
 
-<div class="hiden" id="uploaded_images">
+<div class="hidden" id="uploaded_images">
 {% comment %}
 DIV with uploaded files (thumnail) -- with controls to operate:
  - rotate
@@ -36,6 +37,7 @@ DIV with uploaded files (thumnail) -- with controls to operate:
 {% endcomment %}
 </div>
 
+{% endspaceless %}
 
 </body>
 </html>
