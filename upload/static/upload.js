@@ -92,19 +92,24 @@ function date2text(date) {
 }
 
 function hex(buffer) {
-    var hexCodes = [];
-    var view = new DataView(buffer);
+    // Using getUint32 reduces the number of iterations needed (we process 4 bytes each time)
+    buffer = uint8_to_uint32(buffer);
+    var chars = [];
     var padding = '00000000';
-    for (var i = 0; i < view.byteLength; i += 4) {
-        // Using getUint32 reduces the number of iterations needed (we process 4 bytes each time)
+    for(let num of buffer) {
         // toString(16) will give the hex representation of the number without padding
-        var value = view.getUint32(i).toString(16);
-        // We use concatenation and slice for padding
-        hexCodes.push((padding + value).slice(-padding.length));
+        chars.push((padding + num.toString(16)).slice(-padding.length));
     }
+    return chars.join("");
+}
 
-    // Join all the hex strings into one
-    return hexCodes.join("");
+function uint8_to_uint32(buffer) {
+    buffer = new DataView(buffer);
+    var result = new Uint32Array(buffer.byteLength / 4);
+    for(var i=0;i<buffer.byteLength;i+=4) {
+        result[i / 4] = buffer.getUint32(i);
+    }
+    return result;
 }
 
 function sha1(text) {
@@ -200,6 +205,8 @@ function errorFileUpload(file) {
 }
 
 function get_file_sha1(file) {
+    // TODO: Consider iterative hashing, since we cannot handle >= 3 GB files
+    // See: https://lists.w3.org/Archives/Public/public-webcrypto/2016Nov/0000.html
     return new Promise(function(resolve, reject) {
         var reader = new FileReader();
         reader.onloadend = function(e){
@@ -242,6 +249,7 @@ function update_progress(file, e) {
 
 function upload_file(file) {
     if(file.media) {
+        console.log('File already uploaded', file);
         return file;
     }
 
@@ -267,19 +275,18 @@ function upload_file(file) {
         }
         return response.json().then(function(json){
             file.media = json.media;
+            console.log('Uploaded file', file);
             return file;
         });
     });
 }
 
 function uploadFile(file) {
-    return get_file_sha1(file
-    ).then(check_for_duplicated
-    ).then(upload_file
-    ).then(function(uploaded_file) {
-        console.log(uploaded_file);
-        return uploaded_file;
-    }).then(finishFileUpload).catch(function(err){
+    return get_file_sha1(file)
+    .then(check_for_duplicated)
+    .then(upload_file)
+    .then(finishFileUpload)
+    .catch(function(err){
         console.error(err);
         errorFileUpload(file);
     });
