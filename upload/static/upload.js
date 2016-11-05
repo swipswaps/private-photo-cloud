@@ -130,7 +130,10 @@ function uploadFiles(files) {
 
         div.setAttribute('id', `upload_${file_obj.id}`);
         div.classList.add('upload_file');
-        div.classList.add(`type_${content_type}`);
+
+        if(content_type) {
+            div.classList.add(`type_${content_type}`);
+        }
 
         var title = [
             file.name,
@@ -140,6 +143,11 @@ function uploadFiles(files) {
         ].join("\n");
 
         div.setAttribute('title', title);
+
+        var progress_div = document.createElement('div');
+        progress_div.setAttribute('id', `upload_${file_obj.id}_progress`);
+        progress_div.classList.add('progress');
+        div.appendChild(progress_div);
 
         upload_div.appendChild(div);
     }
@@ -194,7 +202,7 @@ function errorFileUpload(file) {
 function get_file_sha1(file) {
     return new Promise(function(resolve, reject) {
         var reader = new FileReader();
-        reader.onload = function(e){
+        reader.onloadend = function(e){
             crypto.subtle.digest("SHA-1", e.target.result).then(hex).then(resolve, reject);
         };
         reader.onerror = reject;
@@ -206,7 +214,7 @@ function get_file_sha1(file) {
 }
 
 function check_for_duplicated(file) {
-    return fetch(`/upload/check-present-sha1/${file.sha1}`, {
+    return fetch(`/upload/media/sha1_${file.sha1}/`, {
         credentials: 'same-origin'
     }).then(function(response){
         if(!response.ok){
@@ -214,7 +222,7 @@ function check_for_duplicated(file) {
         }
         return response.json();
     }).then(function(json){
-        file.present = json.present;
+        file.media = json.media;
         return file;
     });
 }
@@ -225,8 +233,15 @@ function getCookie(name) {
     return match ? match[1] : null;
 }
 
+function update_progress(file, e) {
+    if(!e.lengthComputable || e.loaded == e.total) {
+        return;
+    }
+    document.getElementById(`upload_${file.id}_progress`).style.height = `${100 * e.loaded / e.total}%`;
+}
+
 function upload_file(file) {
-    if(file.present) {
+    if(file.media) {
         return file;
     }
 
@@ -239,17 +254,19 @@ function upload_file(file) {
     data.set('sha1', file.sha1);
     data.set('file', file.file);
 
-    return fetch('/upload/file/', {
+    return fetch_w_progress('/upload/file/', {
         method: 'POST',
         credentials: 'same-origin',
         body: data,
         headers: {'X-CSRFToken': getCookie('csrftoken')}
+    }, function(e){
+        update_progress(file, e);
     }).then(function(response){
         if(!response.ok) {
             throw Error('Failed to upload');
         }
         return response.json().then(function(json){
-            console.log(json);
+            file.media = json.media;
             return file;
         });
     });
@@ -259,12 +276,43 @@ function uploadFile(file) {
     return get_file_sha1(file
     ).then(check_for_duplicated
     ).then(upload_file
-    ).then(function(hashed_file) {
-        console.log(hashed_file);
-        return hashed_file;
+    ).then(function(uploaded_file) {
+        console.log(uploaded_file);
+        return uploaded_file;
     }).then(finishFileUpload).catch(function(err){
         console.error(err);
         errorFileUpload(file);
+    });
+}
+
+function fetch_w_progress(url, settings, onprogress) {
+    var xhr = new XMLHttpRequest();
+    xhr.open(settings.method || 'GET', url, true); // async
+
+    if(settings.credentials && settings.credentials != 'omit') {
+        xhr.withCredentials = true;
+    }
+
+    if(settings.headers) {
+        for(var k in settings.headers) {
+            xhr.setRequestHeader(k, settings.headers[k]);
+        }
+    }
+    return new Promise(function(resolve, reject){
+        xhr.onerror = reject;
+        xhr.onload = function(e) {
+            console.log(e);
+            var response = e.target;
+            response.ok = (response.status >= 200 && response.status < 300);
+            response.json = function() {
+                return new Promise(function(resolve, reject){
+                    resolve(JSON.parse(response.responseText));
+                });
+            };
+            resolve(response);
+        };
+        xhr.upload.onprogress = onprogress;
+        xhr.send(settings.body || null);
     });
 }
 

@@ -31,6 +31,7 @@
 	display: inline-block;
 	margin: 5px 0 0 5px;
 	border: solid 1px black;
+	background-color: blue;
 }
 
 .upload_file.type_image {
@@ -39,4 +40,10 @@
 
 .upload_file.type_video {
 	background-color: red;
+}
+
+.progress {
+	width: 100%;
+	height: 0;
+	background-color: rgba(255, 255, 255, 0.8);
 }

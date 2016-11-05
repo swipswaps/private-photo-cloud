@@ -38,7 +38,9 @@ def upload_file(request):
     # TODO: Re-calculate size and sha1
     media.save()
 
-    return JsonResponse({'ok': True})
+    resp = JsonResponse({'media': {'id': media.id}})
+    resp.status_code = 201
+    return resp
 
 
 @login_required
@@ -48,14 +50,13 @@ def check_present(request, alg=None, digest=None):
 
     if alg == 'sha1':
         digest_b85 = base64.b85encode(binascii.unhexlify(digest))
-        print(alg, digest, digest_b85)
     else:
         raise NotImplemented(f'Unknown algorithm {alg}')
 
     try:
-        media = models.Media.objects.get(uploader=request.user,
-                                         sha1_b85=digest_b85)
+        media = {'id': models.Media.objects.get(uploader=request.user,
+                                                sha1_b85=digest_b85).id}
     except models.Media.DoesNotExist:
         media = None
 
-    return JsonResponse({'present': False if not media else media.id})
+    return JsonResponse({'media': media})
