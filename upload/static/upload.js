@@ -161,7 +161,13 @@ function uploadFiles(files) {
 }
 
 function processUploadQueue() {
-    document.getElementById('upload_remaining').innerText = `${files2upload.length + files_w_error.length + UPLOAD_QUEUE} files: ${bytes2text(files2upload_size)}`;
+    var upload_status_div = document.getElementById('upload_remaining');
+    if(!(files2upload.length + UPLOAD_QUEUE)) {
+        upload_status_div.classList.add('hidden');
+    } else {
+        upload_status_div.classList.remove('hidden');
+        upload_status_div.innerText = `${files2upload.length + files_w_error.length + UPLOAD_QUEUE} files: ${bytes2text(files2upload_size)}`;
+    }
 
     var num, file;
 
@@ -307,8 +313,7 @@ function fetch_w_progress(url, settings, onprogress) {
     }
     return new Promise(function(resolve, reject){
         xhr.onerror = reject;
-        xhr.onload = function(e) {
-            console.log(e);
+        xhr.onloadend = function(e) {
             var response = e.target;
             response.ok = (response.status >= 200 && response.status < 300);
             response.json = function() {
