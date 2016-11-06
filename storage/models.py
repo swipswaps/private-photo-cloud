@@ -1,6 +1,7 @@
 import base64
 import binascii
 import datetime
+import re
 
 from django.db import models
 from django.contrib.auth.models import User
@@ -61,16 +62,10 @@ class Media(MediaConstMixin, models.Model):
         (MEDIA_OTHER, _('Other')),
     )
 
-    EXIF_TAG_ORIENTATION = 274  # id of EXIF tag for orientation
-
-    # Clock-wise
-    ORIENTATION_NEEDED_ROTATION = {
-        # See http://sylvana.net/jpegcrop/exif_orientation.html
-        1: 0,       # image is not rotated
-        3: 180,     # image is rotated 180 degrees
-        6: 90,      # image is rotated 270 degrees
-        8: 270,     # image is rotated 90 degrees
+    ORIENTATIONS_NO_DEGREE = {
+        'Horizontal (normal)': 0,
     }
+    RE_ORIENTAION = re.compile('^Rotate (?P<degree>\d+)(?P<counter> CW)?$')
 
     THUMBNAIL_BOX = (128, 128)
 
@@ -187,7 +182,7 @@ class Media(MediaConstMixin, models.Model):
         thumbnail_file = SimpleUploadedFile('thumbnail.jpg', b'', 'image/jpeg')
 
         with Image.open(media.content) as image:
-            media.needed_rotate_degree = cls.get_needed_rotate_degree(image)
+            media.needed_rotate_degree = cls.get_image_needed_rotate_degree(media.content)
 
             image.thumbnail(cls.THUMBNAIL_BOX, Image.LANCZOS)
 
@@ -204,7 +199,7 @@ class Media(MediaConstMixin, models.Model):
         media.save()
 
     @classmethod
-    def get_needed_rotate_degree(cls, image):
+    def get_image_needed_rotate_degree(cls, file_field):
         """
         Extract orientation information from an image.
 
@@ -213,17 +208,47 @@ class Media(MediaConstMixin, models.Model):
         - XMP
         - IPTC
         - chunks (https://en.wikipedia.org/wiki/Portable_Network_Graphics#Ancillary_chunks)
+
+        We use exiftool that is a standart in extracting metadata from images.
         """
-        try:
-            orientation = image._getexif()[cls.EXIF_TAG_ORIENTATION]
-        except (KeyError, AttributeError):
-            # No orientation or given format does not have EXIF metadata
+        import pyexifinfo
+
+        metadata = pyexifinfo.get_json(file_field.path)
+
+        orientation = [(k, v)
+                       for k, v in metadata[0].items()
+                       if 'orientation' in k.lower()]
+
+        if not orientation:
+            # Was not found
             return None
 
+        if len(orientation) > 1:
+            raise NotImplementedError(f'Multiple orientations found: {orientation}')
+
+        orientation = orientation[0]
+
         try:
-            return cls.ORIENTATION_NEEDED_ROTATION[orientation]
+            # First check exact match
+            return cls.ORIENTATIONS_NO_DEGREE[orientation[1]]
         except KeyError:
-            raise NotImplementedError(f'Unsupported orientation {orientation}')
+            pass
+
+        # Try to parse orientation
+        m = cls.RE_ORIENTAION.search(orientation[1])
+
+        if not m:
+            # Failed to parse
+            raise NotImplementedError(f'Unsupported orientation: {orientation[1]}')
+
+        degree = int(m.group('degree'), 10)
+
+        if m.group('counter'):
+            # counter-clockwise
+            return degree
+
+        # clock-wise
+        return 360 - degree
 
 
 # We must make it static after initialization, otherwise methods would not work in FileField
