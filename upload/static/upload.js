@@ -149,12 +149,20 @@ function renderUploadItem(file_obj) {
 }
 
 function renderUploadedItem(file_obj) {
-    var div = document.createElement('div');
+    if(!file_obj.media.thumbnail) {
+        var div = document.createElement('div');
 
-    div.setAttribute('id', `media_${file_obj.media.id}`);
-    div.classList.add('media');
+        div.setAttribute('id', `media_${file_obj.media.id}`);
+        div.classList.add('media');
+        return div;
+    }
 
-    return div;
+    var img = document.createElement('img');
+    img.setAttribute('id', `media_${file_obj.media.id}`);
+    img.classList.add('media');
+    img.setAttribute('src', file_obj.media.thumbnail);
+
+    return img;
 }
 
 function uploadFiles(files) {

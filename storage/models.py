@@ -5,7 +5,7 @@ import datetime
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
-
+from django.db.models.signals import post_save
 
 from .const import ShotConstMixin, MediaConstMixin
 
@@ -71,30 +71,43 @@ class Media(MediaConstMixin, models.Model):
     media_type = models.IntegerField(choices=MEDIA_TYPES)
 
     # actual values
-    width = models.IntegerField(help_text=_('Width for use'))
-    height = models.IntegerField(help_text=_('Height for use'))
-    duration_seconds = models.DurationField(null=True)
+    width = models.IntegerField(null=True, blank=True, help_text=_('Width for use'))
+    height = models.IntegerField(null=True, blank=True, help_text=_('Height for use'))
+    duration_seconds = models.DurationField(null=True, blank=True, )
 
-    content = models.FileField()
+    content = models.FileField(
+        # TODO: Add extension
+        upload_to=lambda instance, filename: f'{instance.uploader_id}_{instance.sha1_hex}_{instance.size_bytes}'
+    )
     size_bytes = models.BigIntegerField()
 
-    content_width = models.IntegerField(help_text=_('Content width'))
-    content_height = models.IntegerField(help_text=_('Content height'))
+    content_width = models.IntegerField(null=True, blank=True, help_text=_('Content width'))
+    content_height = models.IntegerField(null=True, blank=True, help_text=_('Content height'))
 
     content_rotate_degree = models.IntegerField(
         default=0,
         help_text=_('How much content data must be rotated before use'),
     )
 
-    is_default = models.BooleanField()
+    is_default = models.BooleanField(default=False)
 
     mimetype = models.CharField(max_length=127)
-    workflow_type = models.IntegerField(choices=MediaConstMixin.WORKFLOW_TYPES)
+    workflow_type = models.IntegerField(null=True, blank=True, choices=MediaConstMixin.WORKFLOW_TYPES)
 
     source_filename = models.CharField(max_length=255, blank=True)
     source_type = models.CharField(max_length=63, blank=True)
     source_lastmodified = models.DateTimeField(null=True)
     sha1_b85 = models.CharField(max_length=25, db_index=True)
+
+    thumbnail = models.ImageField(
+        blank=True,
+        width_field='thumbnail_width',
+        height_field='thumbnail_height',
+        # TODO: Improve
+        upload_to=lambda instance, filename: f'{instance.id}.jpg'
+    )
+    thumbnail_width = models.IntegerField(null=True, blank=True)
+    thumbnail_height = models.IntegerField(null=True, blank=True)
 
     class Meta:
         unique_together = (
@@ -111,7 +124,7 @@ class Media(MediaConstMixin, models.Model):
 
     @property
     def sha1_hex(self):
-        return self.sha1.encode('hex')
+        return self.sha1.hex()
 
     @sha1_hex.setter
     def sha1_hex(self, digest_hex):
@@ -145,6 +158,28 @@ class Media(MediaConstMixin, models.Model):
             number,
             datetime.timezone.utc)
 
+    @classmethod
+    def generate_photo_thumbnail(cls, sender, instance, **kwags):
+        from PIL import Image
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        media = instance
+
+        if media.thumbnail or media.media_type != cls.MEDIA_PHOTO:
+            return
+
+        image = Image.open(media.content)
+        image.thumbnail((128, 128), Image.LANCZOS)
+
+        thumbnail = SimpleUploadedFile('thumbnail.jpg', b'', 'image/jpeg')
+
+        image.save(thumbnail, 'JPEG', quality=90)
+
+        media.thumbnail = thumbnail
+        media.save()
+
+
+post_save.connect(Media.generate_photo_thumbnail, sender=Media)
 
 """
 # TODO: Convert to model manager or proxy model

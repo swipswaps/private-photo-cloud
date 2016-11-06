@@ -62,11 +62,20 @@
 	background-color: rgba(255, 255, 255, 0.8);
 }
 
-.media {
-	width: 50px;
-	height: 50px;
+div.media {
+	width: 37.5px;
+	height: 37.5px;
 	display: inline-block;
 	margin: 5px 0 0 5px;
+	vertical-align: middle;
+	background-color: #EEE;
 	border: solid 1px #CCC;
-	background-color: #CCC;
+}
+
+img.media {
+	margin: 5px 0 0 5px;
+	max-width: 50px;
+	max-height: 50px;
+	vertical-align: middle;
+	border: solid 1px #EEE;
 }
