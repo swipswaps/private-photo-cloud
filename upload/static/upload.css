@@ -63,8 +63,8 @@
 }
 
 div.media {
-	width: 37.5px;
-	height: 37.5px;
+	width: 48px;
+	height: 48px;
 	display: inline-block;
 	margin: 5px 0 0 5px;
 	vertical-align: middle;
@@ -74,8 +74,8 @@ div.media {
 
 img.media {
 	margin: 5px 0 0 5px;
-	max-width: 50px;
-	max-height: 50px;
+	max-width: 64px;
+	max-height: 64px;
 	vertical-align: middle;
 	border: solid 1px #EEE;
 }
