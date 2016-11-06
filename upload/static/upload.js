@@ -226,7 +226,14 @@ function finishFileUpload(file) {
 
     uploaded_div.classList.remove('hidden');
 
-    uploaded_div.appendChild(renderUploadedItem(file));
+    var media_div = renderUploadedItem(file);
+
+    var old_media_div = document.getElementById(media_div.id);
+    if(old_media_div) {
+        old_media_div.remove();
+    }
+
+    uploaded_div.appendChild(media_div);
 
     processUploadQueue();
 }
