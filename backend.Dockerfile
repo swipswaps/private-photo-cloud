@@ -3,6 +3,7 @@ FROM python:3.6.0b2-alpine
 RUN apk --no-cache upgrade\
  && PKG="gcc musl-dev"\
  && apk add --no-cache $PKG\
+ && python -m pip install pip==9.0.1\
  && python -m pip install dumb-init==1.2\
  && apk del $PKG
 
@@ -10,7 +11,7 @@ COPY requirements /tmp/requirements
 
 RUN apk --no-cache upgrade\
  && PKG="gcc musl-dev postgresql-dev jpeg-dev openjpeg-dev zlib-dev tiff-dev freetype-dev lcms2-dev libwebp-dev"\
- && apk add --no-cache postgresql jpeg openjpeg zlib tiff freetype lcms2 libwebp $PKG\
+ && apk add --no-cache postgresql exiftool jpeg openjpeg zlib tiff freetype lcms2 libwebp $PKG\
  && python -m pip install -r /tmp/requirements\
  && apk del $PKG
 
