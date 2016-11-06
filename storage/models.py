@@ -61,6 +61,26 @@ class Media(MediaConstMixin, models.Model):
         (MEDIA_OTHER, _('Other')),
     )
 
+    EXIF_TAG_ORIENTATION = 274  # id of EXIF tag for orientation
+
+    # Clock-wise
+    ORIENTATION_NEEDED_ROTATION = {
+        # See http://sylvana.net/jpegcrop/exif_orientation.html
+        1: 0,       # image is not rotated
+        3: 180,     # image is rotated 180 degrees
+        6: 90,      # image is rotated 270 degrees
+        8: 270,     # image is rotated 90 degrees
+    }
+
+    THUMBNAIL_BOX = (128, 128)
+
+    def generate_content_filename(instance, filename):
+        # TODO: Add extension
+        return f'{instance.uploader_id}_{instance.sha1_hex}_{instance.size_bytes}'
+
+    def generate_thumbnail_filename(instance, filename):
+        return f'thumbnail_{instance.id}.jpg'
+
     uploader = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -75,18 +95,15 @@ class Media(MediaConstMixin, models.Model):
     height = models.IntegerField(null=True, blank=True, help_text=_('Height for use'))
     duration_seconds = models.DurationField(null=True, blank=True, )
 
-    content = models.FileField(
-        # TODO: Add extension
-        upload_to=lambda instance, filename: f'{instance.uploader_id}_{instance.sha1_hex}_{instance.size_bytes}'
-    )
+    content = models.FileField(upload_to=generate_content_filename)
     size_bytes = models.BigIntegerField()
 
     content_width = models.IntegerField(null=True, blank=True, help_text=_('Content width'))
     content_height = models.IntegerField(null=True, blank=True, help_text=_('Content height'))
 
-    content_rotate_degree = models.IntegerField(
-        default=0,
-        help_text=_('How much content data must be rotated before use'),
+    needed_rotate_degree = models.IntegerField(
+        null=True, blank=True,  # null means we did not extract if from the image, need to guess
+        help_text=_('How much content data need to be rotated to get correct orientation'),
     )
 
     is_default = models.BooleanField(default=False)
@@ -103,8 +120,7 @@ class Media(MediaConstMixin, models.Model):
         blank=True,
         width_field='thumbnail_width',
         height_field='thumbnail_height',
-        # TODO: Improve
-        upload_to=lambda instance, filename: f'{instance.id}.jpg'
+        upload_to=generate_thumbnail_filename
     )
     thumbnail_width = models.IntegerField(null=True, blank=True)
     thumbnail_height = models.IntegerField(null=True, blank=True)
@@ -168,15 +184,51 @@ class Media(MediaConstMixin, models.Model):
         if media.thumbnail or media.media_type != cls.MEDIA_PHOTO:
             return
 
-        image = Image.open(media.content)
-        image.thumbnail((128, 128), Image.LANCZOS)
+        thumbnail_file = SimpleUploadedFile('thumbnail.jpg', b'', 'image/jpeg')
 
-        thumbnail = SimpleUploadedFile('thumbnail.jpg', b'', 'image/jpeg')
+        with Image.open(media.content) as image:
+            media.needed_rotate_degree = cls.get_needed_rotate_degree(image)
 
-        image.save(thumbnail, 'JPEG', quality=90)
+            image.thumbnail(cls.THUMBNAIL_BOX, Image.LANCZOS)
 
-        media.thumbnail = thumbnail
+            # Rotate thumbnail, not whole image
+            if media.needed_rotate_degree:
+                # PIL rotate rotates counter clockwise => invert it
+                thumbnail = image.rotate(-media.needed_rotate_degree, expand=True)
+            else:
+                thumbnail = image
+
+            thumbnail.save(thumbnail_file, 'JPEG', quality=90)
+
+        media.thumbnail = thumbnail_file
         media.save()
+
+    @classmethod
+    def get_needed_rotate_degree(cls, image):
+        """
+        Extract orientation information from an image.
+
+        We must use 3rd party tool here since there is a number of standards:
+        - EXIF
+        - XMP
+        - IPTC
+        - chunks (https://en.wikipedia.org/wiki/Portable_Network_Graphics#Ancillary_chunks)
+        """
+        try:
+            orientation = image._getexif()[cls.EXIF_TAG_ORIENTATION]
+        except (KeyError, AttributeError):
+            # No orientation or given format does not have EXIF metadata
+            return None
+
+        try:
+            return cls.ORIENTATION_NEEDED_ROTATION[orientation]
+        except KeyError:
+            raise NotImplementedError(f'Unsupported orientation {orientation}')
+
+
+# We must make it static after initialization, otherwise methods would not work in FileField
+Media.generate_content_filename = staticmethod(Media.generate_content_filename)
+Media.generate_thumbnail_filename = staticmethod(Media.generate_thumbnail_filename)
 
 
 post_save.connect(Media.generate_photo_thumbnail, sender=Media)
