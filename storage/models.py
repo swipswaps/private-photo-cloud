@@ -198,6 +198,8 @@ class Media(MediaConstMixin, models.Model):
         media.thumbnail = thumbnail_file
         media.save()
 
+    # TODO: Create method to extract orientation from videos (ffprobe?)
+
     @classmethod
     def get_image_needed_rotate_degree(cls, file_field):
         """
