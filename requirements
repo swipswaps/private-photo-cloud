@@ -8,4 +8,3 @@ django-filter==0.15.3       # for REST framework -- filtering support
 
 psycopg2==2.6.2             # PostgreSQL connector
 Pillow==3.4.2               # image processing library
-pyexifinfo==0.4.0			# read metadata

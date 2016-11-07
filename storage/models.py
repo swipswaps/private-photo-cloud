@@ -65,7 +65,7 @@ class Media(MediaConstMixin, models.Model):
     ORIENTATIONS_NO_DEGREE = {
         'Horizontal (normal)': 0,
     }
-    RE_ORIENTAION = re.compile('^Rotate (?P<degree>\d+)(?P<counter> CW)?$')
+    RE_ORIENTATION = re.compile('^Rotate (?P<degree>\d+)(?P<counter> CW)?$')
 
     THUMBNAIL_BOX = (128, 128)
 
@@ -181,19 +181,20 @@ class Media(MediaConstMixin, models.Model):
 
         thumbnail_file = SimpleUploadedFile('thumbnail.jpg', b'', 'image/jpeg')
 
-        with Image.open(media.content) as image:
-            media.needed_rotate_degree = cls.get_image_needed_rotate_degree(media.content)
+        with open(media.content.path, 'rb') as f:
+            with Image.open(f) as image:
+                media.needed_rotate_degree = cls.get_image_needed_rotate_degree(media.content.path)
 
-            image.thumbnail(cls.THUMBNAIL_BOX, Image.LANCZOS)
+                image.thumbnail(cls.THUMBNAIL_BOX, Image.LANCZOS)
 
-            # Rotate thumbnail, not whole image
-            if media.needed_rotate_degree:
-                # PIL rotate rotates counter clockwise => invert it
-                thumbnail = image.rotate(-media.needed_rotate_degree, expand=True)
-            else:
-                thumbnail = image
+                # Rotate thumbnail, not whole image
+                if media.needed_rotate_degree:
+                    # PIL rotate rotates counter clockwise => invert it
+                    thumbnail = image.rotate(-media.needed_rotate_degree, expand=True)
+                else:
+                    thumbnail = image
 
-            thumbnail.save(thumbnail_file, 'JPEG', quality=90)
+                thumbnail.save(thumbnail_file, 'JPEG', quality=90)
 
         media.thumbnail = thumbnail_file
         media.save()
@@ -201,7 +202,7 @@ class Media(MediaConstMixin, models.Model):
     # TODO: Create method to extract orientation from videos (ffprobe?)
 
     @classmethod
-    def get_image_needed_rotate_degree(cls, file_field):
+    def get_image_needed_rotate_degree(cls, filename):
         """
         Extract orientation information from an image.
 
@@ -213,12 +214,12 @@ class Media(MediaConstMixin, models.Model):
 
         We use exiftool that is a standart in extracting metadata from images.
         """
-        import pyexifinfo
+        from storage.exiftool import get_exiftool_info
 
-        metadata = pyexifinfo.get_json(file_field.path)
+        metadata = get_exiftool_info(filename)
 
         orientation = [(k, v)
-                       for k, v in metadata[0].items()
+                       for k, v in metadata.items()
                        if 'orientation' in k.lower()]
 
         if not orientation:
@@ -237,7 +238,7 @@ class Media(MediaConstMixin, models.Model):
             pass
 
         # Try to parse orientation
-        m = cls.RE_ORIENTAION.search(orientation[1])
+        m = cls.RE_ORIENTATION.search(orientation[1])
 
         if not m:
             # Failed to parse

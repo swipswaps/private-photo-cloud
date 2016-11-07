@@ -30,6 +30,7 @@ services:
     working_dir: /home/app
     ports:
       - 80:80
+    restart: unless-stopped
     command: sh -c "
       until psql -h postgres -U user app -c "--" 2>/dev/null; do
         echo "wait...";
