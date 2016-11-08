@@ -199,6 +199,19 @@ class Media(MediaConstMixin, models.Model):
         media.thumbnail = thumbnail_file
         media.save()
 
+    @classmethod
+    def generate_video_thumbnail(cls, sender, instance, **kwags):
+        media = instance
+
+        if media.thumbnail or media.media_type != cls.MEDIA_VIDEO:
+            return
+
+        media.needed_rotate_degree = cls.get_video_needed_rotate_degree(media.content.path)
+
+        print('Rotate', media.needed_rotate_degree)
+
+        media.save()
+
     # TODO: Create method to extract orientation from videos (ffprobe?)
 
     @classmethod
@@ -253,6 +266,31 @@ class Media(MediaConstMixin, models.Model):
         # clock-wise
         return 360 - degree
 
+    @classmethod
+    def get_video_needed_rotate_degree(cls, filename):
+        from storage.ffmpeg import get_ffprobe_info
+
+        metadata = get_ffprobe_info(filename)
+
+        streams = metadata['streams']
+
+        video_streams = [stream for stream in streams if stream['codec_type'] == 'video']
+
+        if not video_streams:
+            return None
+
+        if len(video_streams) != 1:
+            raise NotImplementedError(f'Videos with {len(video_streams)} video streams are not supported')
+
+        video = video_streams[0]
+
+        # TODO: Check side_data_list[0]['rotation']
+
+        try:
+            # counter clock-wise
+            return (360 - int(video['tags']['rotate'], 10)) % 360
+        except KeyError:
+            return None
 
 # We must make it static after initialization, otherwise methods would not work in FileField
 Media.generate_content_filename = staticmethod(Media.generate_content_filename)
@@ -260,6 +298,7 @@ Media.generate_thumbnail_filename = staticmethod(Media.generate_thumbnail_filena
 
 
 post_save.connect(Media.generate_photo_thumbnail, sender=Media)
+post_save.connect(Media.generate_video_thumbnail, sender=Media)
 
 """
 # TODO: Convert to model manager or proxy model
