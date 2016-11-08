@@ -66,15 +66,18 @@ class Media(MediaConstMixin, models.Model):
         'Horizontal (normal)': 0,
     }
     RE_ORIENTATION = re.compile('^Rotate (?P<degree>\d+)(?P<counter> CW)?$')
-
     THUMBNAIL_BOX = (128, 128)
+    JPEG_QUALITY = 95
 
     def generate_content_filename(instance, filename):
         # TODO: Add extension
-        return f'{instance.uploader_id}_{instance.sha1_hex}_{instance.size_bytes}'
+        return f'{instance.uploader_id}_content_{instance.sha1_hex}_{instance.size_bytes}'
 
     def generate_thumbnail_filename(instance, filename):
-        return f'thumbnail_{instance.id}.jpg'
+        return f'{instance.uploader_id}_thumbnail_{instance.id}.jpg'
+
+    def generate_screenshot_filename(instance, filename):
+        return f'{instance.uploader_id}_screenshot_{instance.id}.jpg'
 
     uploader = models.ForeignKey(
         User,
@@ -88,7 +91,7 @@ class Media(MediaConstMixin, models.Model):
     # actual values
     width = models.IntegerField(null=True, blank=True, help_text=_('Width for use'))
     height = models.IntegerField(null=True, blank=True, help_text=_('Height for use'))
-    duration_seconds = models.DurationField(null=True, blank=True, )
+    duration = models.DurationField(null=True, blank=True)
 
     content = models.FileField(upload_to=generate_content_filename)
     size_bytes = models.BigIntegerField()
@@ -110,6 +113,16 @@ class Media(MediaConstMixin, models.Model):
     source_type = models.CharField(max_length=63, blank=True)
     source_lastmodified = models.DateTimeField(null=True)
     sha1_b85 = models.CharField(max_length=25, db_index=True)
+
+    screenshot = models.ImageField(
+        blank=True,
+        width_field='screenshot_width',
+        height_field='screenshot_height',
+        upload_to=generate_screenshot_filename,
+        help_text=_('Image taken from the video')
+    )
+    screenshot_width = models.IntegerField(null=True, blank=True)
+    screenshot_height = models.IntegerField(null=True, blank=True)
 
     thumbnail = models.ImageField(
         blank=True,
@@ -194,25 +207,53 @@ class Media(MediaConstMixin, models.Model):
                 else:
                     thumbnail = image
 
-                thumbnail.save(thumbnail_file, 'JPEG', quality=90)
+                thumbnail.save(thumbnail_file, 'JPEG', quality=cls.JPEG_QUALITY)
 
         media.thumbnail = thumbnail_file
         media.save()
 
+    VIDEO_SCREENSHOT_SECOND = 10
+
     @classmethod
     def generate_video_thumbnail(cls, sender, instance, **kwags):
+        import tempfile
+        from django.core.files.uploadedfile import SimpleUploadedFile, TemporaryUploadedFile
+        from PIL import Image
+        from storage.ffmpeg import get_screenshot
+
         media = instance
 
         if media.thumbnail or media.media_type != cls.MEDIA_VIDEO:
             return
 
-        media.needed_rotate_degree = cls.get_video_needed_rotate_degree(media.content.path)
+        clean_metadata = dict(cls.get_video_clean_metadata(media.content.path))
 
-        print('Rotate', media.needed_rotate_degree)
+        # videos are auto-rotated by ffmpeg during playout / screenshot extraction, so no rotation needed
+        media.needed_rotate_degree = 0
+        media.duration = clean_metadata['duration']
 
+        if media.duration and media.duration.total_seconds() < cls.VIDEO_SCREENSHOT_SECOND * 2:
+            screenshot_second = media.duration.total_seconds() // 3
+        else:
+            screenshot_second = cls.VIDEO_SCREENSHOT_SECOND
+
+        thumbnail = SimpleUploadedFile('thumbnail.jpg', b'', 'image/jpeg')
+
+        screenshot = TemporaryUploadedFile('screenshot.jpg', '', 0, '')
+
+        with tempfile.TemporaryFile('w+b') as screenshot_raw:
+            get_screenshot(media.content.path, seconds_offset=screenshot_second, hide_log=True, target=screenshot_raw)
+
+            with Image.open(screenshot_raw) as image:
+
+                image.save(screenshot, 'JPEG', quality=cls.JPEG_QUALITY)
+
+                image.thumbnail(cls.THUMBNAIL_BOX, Image.LANCZOS)
+                image.save(thumbnail, 'JPEG', quality=cls.JPEG_QUALITY)
+
+        media.screenshot = screenshot
+        media.thumbnail = thumbnail
         media.save()
-
-    # TODO: Create method to extract orientation from videos (ffprobe?)
 
     @classmethod
     def get_image_needed_rotate_degree(cls, filename):
@@ -267,7 +308,7 @@ class Media(MediaConstMixin, models.Model):
         return 360 - degree
 
     @classmethod
-    def get_video_needed_rotate_degree(cls, filename):
+    def get_video_clean_metadata(cls, filename):
         from storage.ffmpeg import get_ffprobe_info
 
         metadata = get_ffprobe_info(filename)
@@ -277,24 +318,23 @@ class Media(MediaConstMixin, models.Model):
         video_streams = [stream for stream in streams if stream['codec_type'] == 'video']
 
         if not video_streams:
-            return None
+            return
 
         if len(video_streams) != 1:
             raise NotImplementedError(f'Videos with {len(video_streams)} video streams are not supported')
 
         video = video_streams[0]
 
-        # TODO: Check side_data_list[0]['rotation']
+        # yield 'rotate', video['side_data_list'][0]['rotation']
+        # yield 'rotate', int(video['tags']['rotate'], 10)
 
-        try:
-            # counter clock-wise
-            return (360 - int(video['tags']['rotate'], 10)) % 360
-        except KeyError:
-            return None
+        yield 'duration', datetime.timedelta(seconds=float(video['duration']))
+
 
 # We must make it static after initialization, otherwise methods would not work in FileField
 Media.generate_content_filename = staticmethod(Media.generate_content_filename)
 Media.generate_thumbnail_filename = staticmethod(Media.generate_thumbnail_filename)
+Media.generate_screenshot_filename = staticmethod(Media.generate_screenshot_filename)
 
 
 post_save.connect(Media.generate_photo_thumbnail, sender=Media)
