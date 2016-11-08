@@ -79,3 +79,12 @@ img.media {
 	vertical-align: middle;
 	border: solid 1px #EEE;
 }
+
+/* TODO: Something better for hover effect. Maybe another absolute-positioned DIV on top */
+
+img.media:hover {
+	max-width: 128px;
+	max-height: 128px;
+}
+
+/* TODO: Somehow indicate that given image a video */
