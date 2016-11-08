@@ -1,5 +1,4 @@
 def get_ffprobe_info(filename):
-    import os
     import tempfile
     import json
     from subprocess import Popen
@@ -14,9 +13,33 @@ def get_ffprobe_info(filename):
 
         f.seek(0)
 
-        if p.returncode:
-            raise RuntimeError(f'Command {" ".join(cmd)} exit with code {p.returncode}')
-
         # for some reason ujson gets a segmentation error here, so use standard JSON library
         # result is 1-item list with a dict
-        return json.load(f)
+        result = json.load(f)
+
+        if result.get('error'):
+            raise ValueError(f"ffprobe error code={result['error']['code']}: {result['error']['string']}")
+
+        return result
+
+
+def get_screenshot(filename, seconds_offset, hide_log=False, target=None):
+    import os
+    import tempfile
+    from subprocess import Popen
+
+    target = target or tempfile.TemporaryFile("w+b")
+
+    cmd = ("ffmpeg", "-hide_banner", "-ss", seconds_offset, "-i", filename, "-frames:v", 1, "-q:v", 1, "-c:v", "mjpeg",
+           "-f", "image2", "-")
+    cmd = (str(c) for c in cmd)
+
+    with open(os.devnull,"wb") as stderr:
+        p = Popen(cmd, stdout=target, stderr=stderr if hide_log else None)
+        p.wait()
+
+    target.seek(0)
+
+    assert not p.returncode
+
+    return target
