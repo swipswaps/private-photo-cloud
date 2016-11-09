@@ -71,13 +71,13 @@ class Media(MediaConstMixin, models.Model):
 
     def generate_content_filename(instance, filename):
         # TODO: Add extension
-        return f'{instance.uploader_id}_content_{instance.sha1_hex}_{instance.size_bytes}'
+        return f'content/{instance.uploader_id}/{instance.sha1_hex}_{instance.size_bytes}'
 
     def generate_thumbnail_filename(instance, filename):
-        return f'{instance.uploader_id}_thumbnail_{instance.id}.jpg'
+        return f'thumbnail/{instance.uploader_id}/{instance.id}.jpg'
 
     def generate_screenshot_filename(instance, filename):
-        return f'{instance.uploader_id}_screenshot_{instance.id}.jpg'
+        return f'screenshot/{instance.uploader_id}/{instance.id}.jpg'
 
     uploader = models.ForeignKey(
         User,
@@ -96,8 +96,8 @@ class Media(MediaConstMixin, models.Model):
     content = models.FileField(upload_to=generate_content_filename)
     size_bytes = models.BigIntegerField()
 
-    content_width = models.IntegerField(null=True, blank=True, help_text=_('Content width'))
-    content_height = models.IntegerField(null=True, blank=True, help_text=_('Content height'))
+    content_width = models.IntegerField(null=True, blank=True, help_text=_('Content width, before rotation'))
+    content_height = models.IntegerField(null=True, blank=True, help_text=_('Content height, before rotation'))
 
     needed_rotate_degree = models.IntegerField(
         null=True, blank=True,  # null means we did not extract if from the image, need to guess
@@ -116,13 +116,11 @@ class Media(MediaConstMixin, models.Model):
 
     screenshot = models.ImageField(
         blank=True,
-        width_field='screenshot_width',
-        height_field='screenshot_height',
+        width_field='width',
+        height_field='height',
         upload_to=generate_screenshot_filename,
-        help_text=_('Image taken from the video')
+        help_text=_('Image taken from the video, sized 1:1 to rotated video')
     )
-    screenshot_width = models.IntegerField(null=True, blank=True)
-    screenshot_height = models.IntegerField(null=True, blank=True)
 
     thumbnail = models.ImageField(
         blank=True,
