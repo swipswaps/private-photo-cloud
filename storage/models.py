@@ -9,6 +9,8 @@ from django.utils.translation import ugettext_lazy as _
 from django.db.models.signals import post_save
 
 from .const import ShotConstMixin, MediaConstMixin
+from .states import MediaState, InitialMediaState
+
 
 # Create your models here.
 
@@ -106,6 +108,8 @@ class Media(MediaConstMixin, models.Model):
 
     is_default = models.BooleanField(default=False)
 
+    processing_state_code = models.IntegerField(default=InitialMediaState.STATE_CODE)
+
     mimetype = models.CharField(max_length=127)
     workflow_type = models.IntegerField(null=True, blank=True, choices=MediaConstMixin.WORKFLOW_TYPES)
 
@@ -135,6 +139,15 @@ class Media(MediaConstMixin, models.Model):
         unique_together = (
             ('uploader', 'sha1_b85'),
         )
+
+    @property
+    def processing_state(self):
+        return MediaState.get_state(self.processing_state_code)
+
+    @processing_state.setter
+    def processing_state(self, value):
+        assert issubclass(value, MediaState), f'{value!r} must be instance of MediaState'
+        self.processing_state_code = value.STATE_CODE
 
     @property
     def sha1(self):
@@ -328,6 +341,22 @@ class Media(MediaConstMixin, models.Model):
 
         yield 'duration', datetime.timedelta(seconds=float(video['duration']))
 
+    @classmethod
+    def generate_metadata(cls, sender, instance, **kwargs):
+        media = instance
+
+        if media.size_bytes:
+            return
+
+        print(dir(media.content))
+
+
+    @classmethod
+    def process(cls, sender, instance, **kwargs):
+        media = instance
+
+        media.processing_state.run(media)
+
 
 # We must make it static after initialization, otherwise methods would not work in FileField
 Media.generate_content_filename = staticmethod(Media.generate_content_filename)
@@ -337,6 +366,9 @@ Media.generate_screenshot_filename = staticmethod(Media.generate_screenshot_file
 
 post_save.connect(Media.generate_photo_thumbnail, sender=Media)
 post_save.connect(Media.generate_video_thumbnail, sender=Media)
+post_save.connect(Media.generate_metadata, sender=Media)
+post_save.connect(Media.process, sender=Media)
+
 
 """
 # TODO: Convert to model manager or proxy model
