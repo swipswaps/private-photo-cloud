@@ -3,6 +3,7 @@ import binascii
 import datetime
 import re
 
+import logging
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
@@ -13,6 +14,8 @@ from .states import MediaState, InitialMediaState
 
 
 # Create your models here.
+
+logger = logging.getLogger(__name__)
 
 
 class ShotCategory(models.Model):
@@ -70,6 +73,7 @@ class Media(MediaConstMixin, models.Model):
     RE_ORIENTATION = re.compile('^Rotate (?P<degree>\d+)(?P<counter> CW)?$')
     THUMBNAIL_BOX = (128, 128)
     JPEG_QUALITY = 95
+    VIDEO_SCREENSHOT_SECOND = 10
 
     def generate_content_filename(instance, filename):
         # TODO: Add extension
@@ -194,79 +198,6 @@ class Media(MediaConstMixin, models.Model):
             datetime.timezone.utc)
 
     @classmethod
-    def generate_photo_thumbnail(cls, sender, instance, **kwags):
-        from PIL import Image
-        from django.core.files.uploadedfile import SimpleUploadedFile
-
-        media = instance
-
-        if media.thumbnail or media.media_type != cls.MEDIA_PHOTO:
-            return
-
-        thumbnail_file = SimpleUploadedFile('thumbnail.jpg', b'', 'image/jpeg')
-
-        with open(media.content.path, 'rb') as f:
-            with Image.open(f) as image:
-                media.needed_rotate_degree = cls.get_image_needed_rotate_degree(media.content.path)
-
-                image.thumbnail(cls.THUMBNAIL_BOX, Image.LANCZOS)
-
-                # Rotate thumbnail, not whole image
-                if media.needed_rotate_degree:
-                    # PIL rotate rotates counter clockwise => invert it
-                    thumbnail = image.rotate(-media.needed_rotate_degree, expand=True)
-                else:
-                    thumbnail = image
-
-                thumbnail.save(thumbnail_file, 'JPEG', quality=cls.JPEG_QUALITY)
-
-        media.thumbnail = thumbnail_file
-        media.save()
-
-    VIDEO_SCREENSHOT_SECOND = 10
-
-    @classmethod
-    def generate_video_thumbnail(cls, sender, instance, **kwags):
-        import tempfile
-        from django.core.files.uploadedfile import SimpleUploadedFile, TemporaryUploadedFile
-        from PIL import Image
-        from storage.ffmpeg import get_screenshot
-
-        media = instance
-
-        if media.thumbnail or media.media_type != cls.MEDIA_VIDEO:
-            return
-
-        clean_metadata = dict(cls.get_video_clean_metadata(media.content.path))
-
-        # videos are auto-rotated by ffmpeg during playout / screenshot extraction, so no rotation needed
-        media.needed_rotate_degree = 0
-        media.duration = clean_metadata['duration']
-
-        if media.duration and media.duration.total_seconds() < cls.VIDEO_SCREENSHOT_SECOND * 2:
-            screenshot_second = media.duration.total_seconds() // 3
-        else:
-            screenshot_second = cls.VIDEO_SCREENSHOT_SECOND
-
-        thumbnail = SimpleUploadedFile('thumbnail.jpg', b'', 'image/jpeg')
-
-        screenshot = TemporaryUploadedFile('screenshot.jpg', '', 0, '')
-
-        with tempfile.TemporaryFile('w+b') as screenshot_raw:
-            get_screenshot(media.content.path, seconds_offset=screenshot_second, hide_log=True, target=screenshot_raw)
-
-            with Image.open(screenshot_raw) as image:
-
-                image.save(screenshot, 'JPEG', quality=cls.JPEG_QUALITY)
-
-                image.thumbnail(cls.THUMBNAIL_BOX, Image.LANCZOS)
-                image.save(thumbnail, 'JPEG', quality=cls.JPEG_QUALITY)
-
-        media.screenshot = screenshot
-        media.thumbnail = thumbnail
-        media.save()
-
-    @classmethod
     def get_image_needed_rotate_degree(cls, filename):
         """
         Extract orientation information from an image.
@@ -291,7 +222,11 @@ class Media(MediaConstMixin, models.Model):
             # Was not found
             return None
 
-        if len(orientation) > 1:
+        orientation_values = set(v for k, v in orientation)
+
+        if len(orientation) > 1 and len(orientation_values) == 1:
+            logger.warning(f'Multiple orientations found: {orientation}')
+        elif len(orientation) > 1:
             raise NotImplementedError(f'Multiple orientations found: {orientation}')
 
         orientation = orientation[0]
@@ -342,16 +277,6 @@ class Media(MediaConstMixin, models.Model):
         yield 'duration', datetime.timedelta(seconds=float(video['duration']))
 
     @classmethod
-    def generate_metadata(cls, sender, instance, **kwargs):
-        media = instance
-
-        if media.size_bytes:
-            return
-
-        print(dir(media.content))
-
-
-    @classmethod
     def process(cls, sender, instance, **kwargs):
         media = instance
 
@@ -364,9 +289,6 @@ Media.generate_thumbnail_filename = staticmethod(Media.generate_thumbnail_filena
 Media.generate_screenshot_filename = staticmethod(Media.generate_screenshot_filename)
 
 
-post_save.connect(Media.generate_photo_thumbnail, sender=Media)
-post_save.connect(Media.generate_video_thumbnail, sender=Media)
-post_save.connect(Media.generate_metadata, sender=Media)
 post_save.connect(Media.process, sender=Media)
 
 

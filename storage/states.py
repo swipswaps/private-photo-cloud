@@ -1,4 +1,10 @@
 # TODO: Implement actual processing per step
+import tempfile
+
+from PIL import Image
+from django.core.files.uploadedfile import TemporaryUploadedFile, SimpleUploadedFile
+
+from storage import ffmpeg
 
 
 class MediaState:
@@ -51,9 +57,7 @@ class MetadataMediaState(MediaState):
 
     @classmethod
     def get_next_state(cls, media):
-        from .models import Media
-
-        if media.media_type == Media.MEDIA_VIDEO:
+        if media.media_type == media.MEDIA_VIDEO:
             return ScreenshotMediaState
         return ThumbnailMediaState
 
@@ -61,6 +65,18 @@ class MetadataMediaState(MediaState):
     def process(cls, media):
         """check size, hash, get proper content-type, other metadata (e.g. duration)"""
         print("extract metadata")
+
+        print(dir(media.content))
+
+        if media.media_type == media.MEDIA_PHOTO:
+            media.needed_rotate_degree = media.get_image_needed_rotate_degree(media.content.path)
+        elif media.media_type == media.MEDIA_VIDEO:
+            # videos are auto-rotated by ffmpeg during playout / screenshot extraction, so no rotation needed
+            clean_metadata = dict(media.get_video_clean_metadata(media.content.path))
+
+            media.needed_rotate_degree = 0
+            media.duration = clean_metadata['duration']
+        # otherwise keep need_rotation_degree = None
 
 
 class ScreenshotMediaState(MediaState):
@@ -73,11 +89,25 @@ class ScreenshotMediaState(MediaState):
     @classmethod
     def process(cls, media):
         """Extract screenshot of the video"""
-        from .models import Media
-
-        if media.media_type != Media.MEDIA_VIDEO:
+        if media.media_type != media.MEDIA_VIDEO:
             return
+
         print("extract screenshot")
+
+        if media.duration and media.duration.total_seconds() < media.VIDEO_SCREENSHOT_SECOND * 2:
+            screenshot_second = media.duration.total_seconds() // 3
+        else:
+            screenshot_second = media.VIDEO_SCREENSHOT_SECOND
+
+        screenshot = TemporaryUploadedFile('screenshot.jpg', '', 0, '')
+
+        with tempfile.TemporaryFile('w+b') as screenshot_raw:
+            ffmpeg.get_screenshot(media.content.path, seconds_offset=screenshot_second, hide_log=True, target=screenshot_raw)
+
+            with Image.open(screenshot_raw) as image:
+                image.save(screenshot, 'JPEG', quality=media.JPEG_QUALITY)
+
+        media.screenshot = screenshot
 
 
 class ThumbnailMediaState(MediaState):
@@ -91,6 +121,32 @@ class ThumbnailMediaState(MediaState):
     def process(cls, media):
         """Extract thumbnail from image or video's screenshot"""
         print("extract thumbnail")
+
+        if media.media_type == media.MEDIA_PHOTO:
+            source = media.content
+        elif media.media_type == media.MEDIA_VIDEO:
+            source = media.screenshot
+        else:
+            # Nothing to do
+            return
+
+        thumbnail_file = SimpleUploadedFile('thumbnail.jpg', b'', 'image/jpeg')
+
+        with open(source.path, 'rb') as f:
+            with Image.open(f) as image:
+                image.thumbnail(media.THUMBNAIL_BOX, Image.LANCZOS)
+
+                # Rotate thumbnail, not whole image
+                if media.needed_rotate_degree:
+                    # PIL rotate rotates counter clockwise => invert it
+                    thumbnail = image.rotate(-media.needed_rotate_degree, expand=True)
+                else:
+                    thumbnail = image
+
+                thumbnail.save(thumbnail_file, 'JPEG', quality=media.JPEG_QUALITY)
+
+        media.thumbnail = thumbnail_file
+
 
 
 class OptimizeForWebMediaState(MediaState):
