@@ -1,15 +1,13 @@
-import tempfile
 import datetime
 import logging
-
 import re
+import tempfile
+
 from PIL import Image
-from PIL import ImageFilter
 from django.core.files.uploadedfile import TemporaryUploadedFile, SimpleUploadedFile
 
-from storage import ffmpeg
-from storage.exiftool import get_exiftool_info
-from storage.ffmpeg import get_ffprobe_info
+from storage.tools import ffmpeg
+from storage.tools.exiftool import get_exiftool_info
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +54,7 @@ class InitialMediaState(MediaState):
 
     @classmethod
     def process(cls, media):
-        print("do nothing")
+        logger.debug("do nothing")
 
 
 class MetadataMediaState(MediaState):
@@ -76,16 +74,25 @@ class MetadataMediaState(MediaState):
     @classmethod
     def process(cls, media):
         """check size, hash, get proper content-type, other metadata (e.g. duration)"""
-        print("extract metadata")
+        import magic
 
-        print(dir(media.content))
+        logger.debug("extract metadata")
+
+        mimetype = magic.from_file(media.content.path, mime=True)
+
+        if media.mimetype != mimetype:
+            logger.warning(f'Content type {mimetype!r} is not recognized by browser (got {media.mimetype!r})')
+            media.mimetype = mimetype
+
+        # Set media_type
+        media.media_type = cls.get_media_type_by_mimetype(media.mimetype)
 
         if media.media_type == media.MEDIA_PHOTO:
             media.metadata = get_exiftool_info(media.content.path)
 
             media.needed_rotate_degree = cls.get_image_needed_rotate_degree(media.metadata)
         elif media.media_type == media.MEDIA_VIDEO:
-            media.metadata = get_ffprobe_info(media.content.path)
+            media.metadata = ffmpeg.get_ffprobe_info(media.content.path)
             video_stream = cls.get_video_stream(media.metadata)
 
             # videos are auto-rotated by ffmpeg during playout / screenshot extraction, so no rotation needed
@@ -96,6 +103,18 @@ class MetadataMediaState(MediaState):
         else:
             # No rotation is needed, do not prompt the user
             media.needed_rotate_degree = 0
+
+    @classmethod
+    def get_media_type_by_mimetype(cls, mime_type):
+        from storage.models import Media
+
+        mime_type = mime_type.split('/')[0]
+
+        if mime_type == 'image':
+            return Media.MEDIA_PHOTO
+        elif mime_type == 'video':
+            return Media.MEDIA_VIDEO
+        return Media.MEDIA_OTHER
 
     @classmethod
     def get_image_needed_rotate_degree(cls, metadata):
@@ -110,7 +129,6 @@ class MetadataMediaState(MediaState):
 
         We use exiftool that is a standart in extracting metadata from images.
         """
-        from storage.exiftool import get_exiftool_info
 
         orientation = [(k, v)
                        for k, v in metadata.items()
@@ -185,7 +203,7 @@ class ScreenshotMediaState(MediaState):
         if media.media_type != media.MEDIA_VIDEO:
             return
 
-        print("extract screenshot")
+        logger.debug("extract screenshot")
 
         screenshot_second = min(media.duration.total_seconds() // 3, cls.VIDEO_SCREENSHOT_SECOND)
 
@@ -222,7 +240,7 @@ class ThumbnailMediaState(MediaState):
     @classmethod
     def process(cls, media):
         """Extract thumbnail from image or video's screenshot"""
-        print("extract thumbnail")
+        logger.debug("extract thumbnail")
 
         if media.media_type == media.MEDIA_PHOTO:
             source = media.content
@@ -234,22 +252,26 @@ class ThumbnailMediaState(MediaState):
 
         thumbnail_file = SimpleUploadedFile(name='thumbnail.jpg', content=b'', content_type='image/jpeg')
 
-        with open(source.path, 'rb') as f:
-            with Image.open(f) as image:
-                image.thumbnail(**cls.THUMBNAIL_RESIZE_SETTINGS)
-                # TODO: Sharpen by taste or multi-step downsampling
+        # TODO: If media is RAW image => extract thumbnail from file metadata
 
-                # Rotate thumbnail, not whole image
-                if media.needed_rotate_degree:
-                    # PIL rotate rotates counter clockwise => invert it
-                    thumbnail = image.rotate(-media.needed_rotate_degree, expand=True)
-                else:
-                    thumbnail = image
+        try:
+            with open(source.path, 'rb') as f:
+                with Image.open(f) as image:
+                    image.thumbnail(**cls.THUMBNAIL_RESIZE_SETTINGS)
+                    # TODO: Sharpen by taste or multi-step downsampling
 
-                thumbnail.save(thumbnail_file, **cls.THUMBNAIL_SETTINGS)
+                    # Rotate thumbnail, not whole image
+                    if media.needed_rotate_degree:
+                        # PIL rotate rotates counter clockwise => invert it
+                        thumbnail = image.rotate(-media.needed_rotate_degree, expand=True)
+                    else:
+                        thumbnail = image
 
-        media.thumbnail = thumbnail_file
+                    thumbnail.save(thumbnail_file, **cls.THUMBNAIL_SETTINGS)
 
+            media.thumbnail = thumbnail_file
+        except OSError as ex:
+            logger.exception(f'Failed to extract thumbnail for {media.mimetype!r}')
 
 
 class OptimizeForWebMediaState(MediaState):
@@ -263,7 +285,7 @@ class OptimizeForWebMediaState(MediaState):
     def process(cls, media):
         """Optimize media for web, e.g. transcode video (multiple codecs) and pack images, find good screenshot"""
         # See http://superuser.com/questions/538112/meaningful-thumbnails-for-a-video-using-ffmpeg
-        print("optimize")
+        logger.debug("optimize")
 
 
 class ReadyMediaState(MediaState):

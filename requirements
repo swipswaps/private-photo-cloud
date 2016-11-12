@@ -10,3 +10,7 @@ django-filter==0.15.3       # for REST framework -- filtering support
 
 psycopg2==2.6.2             # PostgreSQL connector
 Pillow==3.4.2               # image processing library
+
+# Enable upstream once fixed on Alpine
+# python-magic==0.4.12        # recognize content type by content
+https://github.com/krallin/python-magic/tarball/978ae95d5cb96852407c4e7916ebe3c59d06b05c

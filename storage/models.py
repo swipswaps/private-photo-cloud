@@ -78,7 +78,7 @@ class Media(MediaConstMixin, models.Model):
     )
     session_id = models.UUIDField()
     shot = models.ForeignKey(Shot, on_delete=models.CASCADE, null=True)
-    media_type = models.IntegerField(choices=MEDIA_TYPES)
+    media_type = models.IntegerField(choices=MEDIA_TYPES, null=True)
 
     # actual values
     width = models.IntegerField(null=True, blank=True, help_text=_('Width for use'))
@@ -104,7 +104,6 @@ class Media(MediaConstMixin, models.Model):
     workflow_type = models.IntegerField(null=True, blank=True, choices=MediaConstMixin.WORKFLOW_TYPES)
 
     source_filename = models.CharField(max_length=255, blank=True)
-    source_type = models.CharField(max_length=63, blank=True)
     source_lastmodified = models.DateTimeField(null=True)
     sha1_b85 = models.CharField(max_length=25, db_index=True)
 
@@ -132,6 +131,7 @@ class Media(MediaConstMixin, models.Model):
             ('uploader', 'sha1_b85'),
         )
 
+    # hashers properties, are often used
     @property
     def sha1(self):
         return base64.b85decode(self.sha1_b85)
@@ -147,35 +147,7 @@ class Media(MediaConstMixin, models.Model):
     @sha1_hex.setter
     def sha1_hex(self, digest_hex):
         self.sha1 = binascii.unhexlify(digest_hex)
-
-    @property
-    def media_type_by_text(self):
-        if self.media_type == self.MEDIA_PHOTO:
-            return 'image'
-        elif self.media_type == self.MEDIA_VIDEO:
-            return 'video'
-        return 'application'
-
-    @media_type_by_text.setter
-    def media_type_by_text(self, mime_type):
-        self.media_type = self.get_media_type_by_mimetype(mime_type)
-
-    @classmethod
-    def get_media_type_by_mimetype(cls, mime_type):
-        mime_type = mime_type.split('/')[0]
-        if mime_type == 'image':
-            return cls.MEDIA_PHOTO
-        elif mime_type == 'video':
-            return cls.MEDIA_VIDEO
-        return cls.MEDIA_OTHER
-
-    @property
-    def source_lastmodified_time(self):
-        return self.source_lastmodified.timestamp()
-
-    @source_lastmodified_time.setter
-    def source_lastmodified_time(self, number):
-        self.source_lastmodified = datetime.datetime.fromtimestamp(number, datetime.timezone.utc)
+    # /hashers properties
 
     @property
     def processing_state(self):

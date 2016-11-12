@@ -1,3 +1,4 @@
+import datetime
 from django.contrib.auth.decorators import login_required
 from django.template.response import TemplateResponse
 from django.http import JsonResponse
@@ -22,13 +23,12 @@ def upload_file(request):
         session_id=data['session_id'],
         source_filename=data['name'],
         size_bytes=data['size'],
-        source_type=data['type'],
-        media_type_by_text=data['type'],
-        source_lastmodified_time=int(data['last_modified'], 10) / 1000.0,
+        mimetype=data['type'],
+        # last_modified = microseconds since epoch
+        source_lastmodified=datetime.datetime.fromtimestamp(int(data['last_modified'], 10) / 1000,
+                                                            datetime.timezone.utc),
         sha1_hex=data['sha1'],
         content=request.FILES['file'],
-
-        workflow_type=1,
     )
     # TODO: Re-calculate size and sha1
     media.save()
