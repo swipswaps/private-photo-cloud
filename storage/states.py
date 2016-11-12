@@ -87,6 +87,9 @@ class MetadataMediaState(MediaState):
         # Set media_type
         media.media_type = cls.get_media_type_by_mimetype(media.mimetype)
 
+        # TODO: Check file size (given with actual)
+        # TODO: Check file hash (given with actual)
+
         if media.media_type == media.MEDIA_PHOTO:
             media.metadata = get_exiftool_info(media.content.path)
 
