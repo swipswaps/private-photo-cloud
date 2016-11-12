@@ -122,6 +122,7 @@ function sha1(text) {
 function renderUploadItem(file_obj) {
     var div = document.createElement('div');
 
+    // TODO: Update node ID with hash once calculated
     div.setAttribute('id', `upload_${file_obj.id}`);
     div.classList.add('upload_file');
 
@@ -140,6 +141,8 @@ function renderUploadItem(file_obj) {
 
     div.setAttribute('title', title);
 
+    // TODO: Generate different size for block depending on the file size
+
     var progress_div = document.createElement('div');
     progress_div.setAttribute('id', `upload_${file_obj.id}_progress`);
     progress_div.classList.add('progress');
@@ -149,6 +152,7 @@ function renderUploadItem(file_obj) {
 }
 
 function renderUploadedItem(file_obj) {
+    // TODO: Generate node ID from hash
     if(!file_obj.media.thumbnail) {
         var div = document.createElement('div');
 
