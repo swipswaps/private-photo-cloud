@@ -131,7 +131,7 @@ class Media(MediaConstMixin, models.Model):
 
     class Meta:
         unique_together = (
-            ('uploader', 'sha1_b85'),
+            ('uploader', 'sha1_b85', 'size_bytes'),
         )
 
     # hashers properties, are often used

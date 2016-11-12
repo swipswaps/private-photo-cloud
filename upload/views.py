@@ -53,7 +53,7 @@ def upload_file(request):
 
 
 @login_required
-def check_present(request, alg=None, digest=None):
+def check_present(request, alg=None, digest=None, size=None):
     import binascii
     import base64
 
@@ -63,7 +63,7 @@ def check_present(request, alg=None, digest=None):
         raise NotImplemented(f'Unknown algorithm {alg}')
 
     try:
-        media = models.Media.objects.get(uploader=request.user, sha1_b85=digest_b85)
+        media = models.Media.objects.get(uploader=request.user, sha1_b85=digest_b85, size_bytes=size)
     except models.Media.DoesNotExist:
         return JsonResponse({'media': None})
 

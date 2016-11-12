@@ -122,7 +122,6 @@ function sha1(text) {
 function renderUploadItem(file_obj) {
     var div = document.createElement('div');
 
-    // TODO: Update node ID with hash once calculated
     div.setAttribute('id', `upload_${file_obj.id}`);
     div.classList.add('upload_file');
 
@@ -152,21 +151,18 @@ function renderUploadItem(file_obj) {
 }
 
 function renderUploadedItem(file_obj) {
-    // TODO: Generate node ID from hash
-    if(!file_obj.media.thumbnail) {
-        var div = document.createElement('div');
-
-        div.setAttribute('id', `media_${file_obj.media.id}`);
-        div.classList.add('media');
-        return div;
+    // Media.id is a hard identifier, no need to use any other unique value, e.g. SHA1 sum
+    var element;
+    if(file_obj.media.thumbnail) {
+        element = document.createElement('img');
+        element.setAttribute('src', file_obj.media.thumbnail);
+    } else {
+        element = document.createElement('div');
     }
 
-    var img = document.createElement('img');
-    img.setAttribute('id', `media_${file_obj.media.id}`);
-    img.classList.add('media');
-    img.setAttribute('src', file_obj.media.thumbnail);
-
-    return img;
+    element.setAttribute('id', `media_${file_obj.media.id}`);
+    element.classList.add('media');
+    return element;
 }
 
 function uploadFiles(files) {
@@ -266,7 +262,7 @@ function get_file_sha1(file) {
 }
 
 function check_for_duplicated(file) {
-    return fetch(`/upload/media/sha1_${file.sha1}/`, {
+    return fetch(`/upload/media/sha1_${file.sha1}_${file.file.size}/`, {
         credentials: 'same-origin'
     }).then(function(response){
         if(!response.ok){
