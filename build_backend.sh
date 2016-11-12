@@ -1,2 +1,2 @@
 #!/bin/sh
-docker-compose -f backend.docker-compose.yaml build
+exec docker-compose -f backend.docker-compose.yaml build
