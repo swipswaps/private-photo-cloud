@@ -1,5 +1,6 @@
 import datetime
 import logging
+import os
 import re
 import tempfile
 
@@ -7,6 +8,7 @@ from PIL import Image
 from django.core.files.uploadedfile import TemporaryUploadedFile, SimpleUploadedFile
 
 from storage.tools import ffmpeg
+from storage.tools.binhash import get_sha1_hex
 from storage.tools.exiftool import get_exiftool_info
 
 logger = logging.getLogger(__name__)
@@ -17,6 +19,9 @@ class MediaState:
 
     STATES = {}
 
+    class InvalidUploadError(ValueError):
+        pass
+
     @classmethod
     def get_state(cls, code):
         return cls.STATES.get(code, UnknownMediaState)
@@ -25,6 +30,10 @@ class MediaState:
     def run(cls, media):
         try:
             cls.process(media)
+        except cls.InvalidUploadError as ex:
+            logger.error(ex)
+            media.delete()
+            raise
         except Exception as ex:
             # That is breaking an abstraction
             media.processing_state_code = - cls.STATE_CODE
@@ -81,14 +90,24 @@ class MetadataMediaState(MediaState):
         mimetype = magic.from_file(media.content.path, mime=True)
 
         if media.mimetype != mimetype:
-            logger.warning(f'Content type {mimetype!r} is not recognized by browser (got {media.mimetype!r})')
+            logger.info(f'Content type of {os.path.splitext(media.source_filename)[1]!r} is not recognized by'
+                        f' browser (got {media.mimetype!r} instead of {mimetype!r})')
             media.mimetype = mimetype
 
         # Set media_type
         media.media_type = cls.get_media_type_by_mimetype(media.mimetype)
 
-        # TODO: Check file size (given with actual)
-        # TODO: Check file hash (given with actual)
+        # Verify file size
+        size_bytes = media.content.size
+
+        if media.size_bytes != size_bytes:
+            raise cls.InvalidUploadError(f'actual size does not match declared: {size_bytes!r} != {media.size_bytes!r}')
+
+        # Verify file hash
+        sha1_hex = get_sha1_hex(media.content.path)
+
+        if media.sha1_hex != sha1_hex:
+            raise cls.InvalidUploadError(f'actual SHA1 sum does not match declared: {sha1_hex!r} != {media.sha1_hex!r}')
 
         if media.media_type == media.MEDIA_PHOTO:
             media.metadata = get_exiftool_info(media.content.path)
@@ -144,7 +163,7 @@ class MetadataMediaState(MediaState):
         orientation_values = set(v for k, v in orientation)
 
         if len(orientation) > 1 and len(orientation_values) == 1:
-            logger.warning(f'Multiple orientations found: {orientation}')
+            logger.info(f'Multiple orientations found: {orientation}')
         elif len(orientation) > 1:
             raise NotImplementedError(f'Multiple orientations found: {orientation}')
         else:

@@ -16,13 +16,15 @@ def upload(request):
 
 @login_required
 def upload_file(request):
+    from storage.states import MediaState
+
     data = request.POST
 
     media = models.Media(
         uploader_id=request.user.id,
         session_id=data['session_id'],
         source_filename=data['name'],
-        size_bytes=data['size'],
+        size_bytes=int(data['size'], 10),
         mimetype=data['type'],
         # last_modified = microseconds since epoch
         source_lastmodified=datetime.datetime.fromtimestamp(int(data['last_modified'], 10) / 1000,
@@ -30,14 +32,23 @@ def upload_file(request):
         sha1_hex=data['sha1'],
         content=request.FILES['file'],
     )
-    # TODO: Re-calculate size and sha1
-    media.save()
 
-    resp = JsonResponse({'media': {
-        'id': media.id,
-        'thumbnail': media.thumbnail.url if media.thumbnail else None,
-    }})
-    resp.status_code = 201
+    try:
+        media.save()
+    except MediaState.InvalidUploadError as ex:
+        resp = JsonResponse({
+            'error': f'Invalid upload: {ex.args[0]}'
+        })
+        resp.status_code = 400  # HTTP 400 Bad request
+        return resp
+
+    resp = JsonResponse({
+        'media': {
+            'id': media.id,
+            'thumbnail': media.thumbnail.url if media.thumbnail else None,
+        }
+    })
+    resp.status_code = 201  # HTTP 201 Created
     return resp
 
 
