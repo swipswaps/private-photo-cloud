@@ -7,8 +7,8 @@ import re
 import tempfile
 
 from PIL import Image
+from django.conf import settings
 from django.core.files.uploadedfile import TemporaryUploadedFile, SimpleUploadedFile
-from django.template import Variable
 
 from storage import helpers
 from storage.helpers import resolve_dict
@@ -94,15 +94,16 @@ class MetadataMediaState(MediaState):
     def process(cls, media):
         """check size, hash, get proper content-type, other metadata (e.g. duration)"""
         import magic
+        from storage.models import Media
 
         logger.debug("extract metadata")
 
         mimetype = magic.from_file(media.content.path, mime=True)
 
-        source_filename_extension = os.path.splitext(media.source_filename)[1].lower()
+        user_file_extension = os.path.splitext(media.source_filename)[1].lower()
 
         if media.mimetype != mimetype:
-            logger.info(f'Content type of {source_filename_extension!r} is not recognized by'
+            logger.info(f'Content type of {user_file_extension!r} is not recognized by'
                         f' browser (got {media.mimetype!r} instead of {mimetype!r})')
             media.mimetype = mimetype
 
@@ -111,8 +112,8 @@ class MetadataMediaState(MediaState):
 
         media.content_extension = helpers.get_first_filled_value(cls.get_content_extension(media))
 
-        if media.content_extension != source_filename_extension:
-            logging.info(f'Changed file extension: {source_filename_extension!r} => {media.content_extension!r}')
+        if media.content_extension != user_file_extension:
+            logging.info(f'Changed file extension: {user_file_extension!r} => {media.content_extension!r}')
 
         # Verify file size
         size_bytes = media.content.size
@@ -150,15 +151,27 @@ class MetadataMediaState(MediaState):
 
         logger.info(f'Shoot at: {media.shoot_at!r}')
 
-        # TODO: Rename content file to include shoot date and extension
+        content_suffix = Media.generate_content_filename(media, None)
+        content_path = os.path.join(settings.MEDIA_ROOT, content_suffix)
+
+        if content_path != media.content.path:
+            logging.info(f'Move content file: {media.content.path} => {content_path}...')
+            dirname = os.path.dirname(content_path)
+
+            if not os.path.exists(dirname):
+                os.mkdir(dirname)
+
+            os.rename(media.content.path, content_path)
+            media.content.name = content_suffix
 
     @classmethod
     def get_content_extension(cls, media):
         yield cls.EXTENSION_BY_MIME.get(media.mimetype)
         yield mimetypes.guess_extension(media.mimetype)
 
-        logging.warning(f'Unknown extension for {media.mimetype!r}')
-        yield os.path.splitext(media.source_filename)[1].lower()
+        user_file_extension = os.path.splitext(media.source_filename)[1].lower()
+        logging.error(f'Unknown file extension for {media.mimetype!r} => fallback to user extension {user_file_extension}')
+        yield user_file_extension
 
     @classmethod
     def get_image_shoot_date(cls, metadata):
