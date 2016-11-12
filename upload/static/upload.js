@@ -315,10 +315,17 @@ function upload_file(file) {
     }, function(e){
         update_progress(file, e);
     }).then(function(response){
-        if(!response.ok) {
-            throw Error('Failed to upload');
-        }
+        // Extract error from JSON response first
         return response.json().then(function(json){
+            if(json.error) {
+                throw Error(json.error);
+            } else if(!response.ok) {
+                throw Error('Failed to upload');
+            }
+            return json;
+        }, function(){
+            throw Error('Failed to upload');
+        }).then(function(json){
             file.media = json.media;
             console.log('Uploaded file', file);
             return file;
