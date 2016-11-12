@@ -1,4 +1,5 @@
 import datetime
+import json
 import logging
 import mimetypes
 import os
@@ -7,7 +8,10 @@ import tempfile
 
 from PIL import Image
 from django.core.files.uploadedfile import TemporaryUploadedFile, SimpleUploadedFile
+from django.template import Variable
 
+from storage import helpers
+from storage.helpers import resolve_dict
 from storage.tools import ffmpeg
 from storage.tools.binhash import get_sha1_hex
 from storage.tools.exiftool import get_exiftool_info
@@ -81,6 +85,11 @@ class MetadataMediaState(MediaState):
             return ScreenshotMediaState
         return ThumbnailMediaState
 
+    EXTENSION_BY_MIME = {
+        'image/x-canon-cr2': '.cr2',
+        'image/jpeg': '.jpg',
+    }
+
     @classmethod
     def process(cls, media):
         """check size, hash, get proper content-type, other metadata (e.g. duration)"""
@@ -90,7 +99,7 @@ class MetadataMediaState(MediaState):
 
         mimetype = magic.from_file(media.content.path, mime=True)
 
-        source_filename_extension = os.path.splitext(media.source_filename)[1]
+        source_filename_extension = os.path.splitext(media.source_filename)[1].lower()
 
         if media.mimetype != mimetype:
             logger.info(f'Content type of {source_filename_extension!r} is not recognized by'
@@ -100,9 +109,10 @@ class MetadataMediaState(MediaState):
         # Set media_type
         media.media_type = cls.get_media_type_by_mimetype(media.mimetype)
 
-        filename_extension = mimetypes.guess_extension(media.mimetype)
-        # TODO: Rename content file to include extension
-        logging.info(f'{source_filename_extension!r} vs. official {filename_extension!r}')
+        media.content_extension = helpers.get_first_filled_value(cls.get_content_extension(media))
+
+        if media.content_extension != source_filename_extension:
+            logging.info(f'Changed file extension: {source_filename_extension!r} => {media.content_extension!r}')
 
         # Verify file size
         size_bytes = media.content.size
@@ -117,10 +127,12 @@ class MetadataMediaState(MediaState):
             raise cls.InvalidUploadError(f'actual SHA1 sum does not match declared: {sha1_hex!r} != {media.sha1_hex!r}')
 
         if media.media_type == media.MEDIA_PHOTO:
+            # Alternative: exiv2 (faster but less formats) http://dev.exiv2.org/projects/exiv2/wiki/How_does_Exiv2_compare_to_Exiftool
             media.metadata = get_exiftool_info(media.content.path)
 
             media.needed_rotate_degree = cls.get_image_needed_rotate_degree(media.metadata)
-            # TODO: Extract shoot date
+            media.shoot_at = cls.get_image_shoot_date(media.metadata)
+
         elif media.media_type == media.MEDIA_VIDEO:
             media.metadata = ffmpeg.get_ffprobe_info(media.content.path)
             video_stream = cls.get_video_stream(media.metadata)
@@ -130,13 +142,101 @@ class MetadataMediaState(MediaState):
             media.needed_rotate_degree = 0
 
             media.duration = datetime.timedelta(seconds=float(video_stream['duration']))
-            # TODO: Extract shoot date
+            media.shoot_at = cls.get_video_shoot_date(media.metadata)
+
         else:
-            # No rotation is needed, do not prompt the user
+            # No rotation is needed, do not prompt user for it
             media.needed_rotate_degree = 0
 
-        # TODO: Rename content file to include shoot date
+        logger.info(f'Shoot at: {media.shoot_at!r}')
 
+        # TODO: Rename content file to include shoot date and extension
+
+    @classmethod
+    def get_content_extension(cls, media):
+        yield cls.EXTENSION_BY_MIME.get(media.mimetype)
+        yield mimetypes.guess_extension(media.mimetype)
+
+        logging.warning(f'Unknown extension for {media.mimetype!r}')
+        yield os.path.splitext(media.source_filename)[1].lower()
+
+    @classmethod
+    def get_image_shoot_date(cls, metadata):
+        shoot_dates = [(k, v) for k, v in cls.get_image_shoot_date_options(metadata) if v]
+
+        logger.debug(f'image shoot dates: {shoot_dates}')
+
+        for k, v in shoot_dates:
+            return cls.parse_shoot_at(v)
+
+        raise NotImplementedError(f'Failed to extract image shoot date from:\n{json.dumps(dict(metadata), indent=4)}')
+
+    IMAGE_SHOOT_KEYS = (
+        # More precise should come first
+        "Composite:SubSecCreateDate",
+        "Composite:SubSecDateTimeOriginal",
+        "Composite:SubSecModifyDate",
+        "XMP:DateCreated",
+        "EXIF:CreateDate",
+        "EXIF:DateTimeOriginal",
+        "EXIF:ModifyDate",
+        "EXIF:GPSDateStamp",
+    )
+
+    @classmethod
+    def get_image_shoot_date_options(cls, metadata):
+        for k in cls.IMAGE_SHOOT_KEYS:
+            yield k, metadata.get(k)
+
+    @classmethod
+    def get_video_shoot_date(cls, metadata):
+        shoot_dates = [(k, v) for k, v in cls.get_video_shoot_date_options(metadata) if v]
+
+        logger.debug(f'video shoot dates: {shoot_dates}')
+
+        for k, v in shoot_dates:
+            return cls.parse_shoot_at(v)
+
+        raise NotImplementedError(f'Failed to extract video shoot date from:\n{json.dumps(dict(metadata), indent=4)}')
+
+    SHOOT_DATE_FORMATS = (
+        '%Y:%m:%d %H:%M:%S',        # 2016:10:19 21:08:00
+        '%Y:%m:%d %H:%M:%S.%f',     # 2016:11:06 14:29:25.018
+        '%Y-%m-%dT%H:%M:%S%z',      # 2016-10-22T14:39:13+0200
+    )
+
+    @classmethod
+    def parse_shoot_at(cls, value):
+        # Fix too short microseconds section (14:29:25.018 => 14:29:25.01800)
+        value = re.sub(r'(?<=[.])(\d+)$', lambda m: m.group(1).ljust(6, '0'), value)
+
+        for dt_format in cls.SHOOT_DATE_FORMATS:
+            try:
+                dt = datetime.datetime.strptime(value, dt_format)
+            except ValueError:
+                continue
+
+            if not dt.tzinfo:
+                # No timezone info -- assume it is UTC
+                return dt.replace(tzinfo=datetime.timezone.utc)
+            return dt
+
+        raise NotImplementedError(value)
+
+    VIDEO_SHOOT_KEYS = (
+        'format:tags:com.apple.quicktime.creationdate',
+        'format:tags:creation_time',
+        'stream:{codec_type}:tags.creation_time',
+    )
+
+    @classmethod
+    def get_video_shoot_date_options(cls, metadata):
+        for k in cls.VIDEO_SHOOT_KEYS:
+            if ':{codec_type}:' in k:
+                for stream in metadata['streams']:
+                    yield k.format(**stream), resolve_dict(k.replace(':{codec_type}:', ':'), {'stream': stream})
+            else:
+                yield k, resolve_dict(k, metadata)
 
     @classmethod
     def get_media_type_by_mimetype(cls, mime_type):
