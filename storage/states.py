@@ -1,5 +1,6 @@
 import datetime
 import logging
+import mimetypes
 import os
 import re
 import tempfile
@@ -89,13 +90,19 @@ class MetadataMediaState(MediaState):
 
         mimetype = magic.from_file(media.content.path, mime=True)
 
+        source_filename_extension = os.path.splitext(media.source_filename)[1]
+
         if media.mimetype != mimetype:
-            logger.info(f'Content type of {os.path.splitext(media.source_filename)[1]!r} is not recognized by'
+            logger.info(f'Content type of {source_filename_extension!r} is not recognized by'
                         f' browser (got {media.mimetype!r} instead of {mimetype!r})')
             media.mimetype = mimetype
 
         # Set media_type
         media.media_type = cls.get_media_type_by_mimetype(media.mimetype)
+
+        filename_extension = mimetypes.guess_extension(media.mimetype)
+        # TODO: Rename content file to include extension
+        logging.info(f'{source_filename_extension!r} vs. official {filename_extension!r}')
 
         # Verify file size
         size_bytes = media.content.size
@@ -113,6 +120,7 @@ class MetadataMediaState(MediaState):
             media.metadata = get_exiftool_info(media.content.path)
 
             media.needed_rotate_degree = cls.get_image_needed_rotate_degree(media.metadata)
+            # TODO: Extract shoot date
         elif media.media_type == media.MEDIA_VIDEO:
             media.metadata = ffmpeg.get_ffprobe_info(media.content.path)
             video_stream = cls.get_video_stream(media.metadata)
@@ -122,9 +130,13 @@ class MetadataMediaState(MediaState):
             media.needed_rotate_degree = 0
 
             media.duration = datetime.timedelta(seconds=float(video_stream['duration']))
+            # TODO: Extract shoot date
         else:
             # No rotation is needed, do not prompt the user
             media.needed_rotate_degree = 0
+
+        # TODO: Rename content file to include shoot date
+
 
     @classmethod
     def get_media_type_by_mimetype(cls, mime_type):
@@ -275,6 +287,21 @@ class ThumbnailMediaState(MediaState):
         thumbnail_file = SimpleUploadedFile(name='thumbnail.jpg', content=b'', content_type='image/jpeg')
 
         # TODO: If media is RAW image => extract thumbnail from file metadata
+        """
+        exiftool -b -ThumbnailImage image.jpg > thumbnail.jpg
+             Save thumbnail image from "image.jpg" to a file called
+             "thumbnail.jpg".
+
+        exiftool -b -JpgFromRaw -w _JFR.JPG -ext NEF -r .
+             Recursively extract JPG image from all Nikon NEF files in the
+             current directory, adding "_JFR.JPG" for the name of the output JPG
+             files.
+
+        exiftool -a -b -W %d%f_%t%-c.%s -preview:all dir
+             Extract all types of preview images (ThumbnailImage, PreviewImage,
+             JpgFromRaw, etc.) from files in directory "dir", adding the tag
+             name to the output preview image file names.
+        """
 
         try:
             with open(source.path, 'rb') as f:
