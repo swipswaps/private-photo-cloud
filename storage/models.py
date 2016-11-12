@@ -1,9 +1,8 @@
 import base64
 import binascii
 import datetime
-import re
 
-import logging
+from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
@@ -11,11 +10,6 @@ from django.db.models.signals import post_save
 
 from .const import ShotConstMixin, MediaConstMixin
 from .states import MediaState, InitialMediaState
-
-
-# Create your models here.
-
-logger = logging.getLogger(__name__)
 
 
 class ShotCategory(models.Model):
@@ -67,16 +61,8 @@ class Media(MediaConstMixin, models.Model):
         (MEDIA_OTHER, _('Other')),
     )
 
-    ORIENTATIONS_NO_DEGREE = {
-        'Horizontal (normal)': 0,
-    }
-    RE_ORIENTATION = re.compile('^Rotate (?P<degree>\d+)(?P<counter> CW)?$')
-    THUMBNAIL_BOX = (128, 128)
-    JPEG_QUALITY = 95
-    VIDEO_SCREENSHOT_SECOND = 10
-
     def generate_content_filename(instance, filename):
-        # TODO: Add extension
+        # TODO: Add shoot date and extension by mime
         return f'content/{instance.uploader_id}/{instance.sha1_hex}_{instance.size_bytes}'
 
     def generate_thumbnail_filename(instance, filename):
@@ -106,7 +92,7 @@ class Media(MediaConstMixin, models.Model):
     content_height = models.IntegerField(null=True, blank=True, help_text=_('Content height, before rotation'))
 
     needed_rotate_degree = models.IntegerField(
-        null=True, blank=True,  # null means we did not extract if from the image, need to guess
+        null=True, blank=True,  # null means we did not extract if from the media, ask user for correct orientation
         help_text=_('How much content data need to be rotated to get correct orientation'),
     )
 
@@ -139,19 +125,12 @@ class Media(MediaConstMixin, models.Model):
     thumbnail_width = models.IntegerField(null=True, blank=True)
     thumbnail_height = models.IntegerField(null=True, blank=True)
 
+    metadata = JSONField(default=dict)
+
     class Meta:
         unique_together = (
             ('uploader', 'sha1_b85'),
         )
-
-    @property
-    def processing_state(self):
-        return MediaState.get_state(self.processing_state_code)
-
-    @processing_state.setter
-    def processing_state(self, value):
-        assert issubclass(value, MediaState), f'{value!r} must be instance of MediaState'
-        self.processing_state_code = value.STATE_CODE
 
     @property
     def sha1(self):
@@ -179,13 +158,16 @@ class Media(MediaConstMixin, models.Model):
 
     @media_type_by_text.setter
     def media_type_by_text(self, mime_type):
+        self.media_type = self.get_media_type_by_mimetype(mime_type)
+
+    @classmethod
+    def get_media_type_by_mimetype(cls, mime_type):
         mime_type = mime_type.split('/')[0]
         if mime_type == 'image':
-            self.media_type = self.MEDIA_PHOTO
+            return cls.MEDIA_PHOTO
         elif mime_type == 'video':
-            self.media_type = self.MEDIA_VIDEO
-        else:
-            self.media_type = self.MEDIA_OTHER
+            return cls.MEDIA_VIDEO
+        return cls.MEDIA_OTHER
 
     @property
     def source_lastmodified_time(self):
@@ -193,88 +175,16 @@ class Media(MediaConstMixin, models.Model):
 
     @source_lastmodified_time.setter
     def source_lastmodified_time(self, number):
-        self.source_lastmodified = datetime.datetime.fromtimestamp(
-            number,
-            datetime.timezone.utc)
+        self.source_lastmodified = datetime.datetime.fromtimestamp(number, datetime.timezone.utc)
 
-    @classmethod
-    def get_image_needed_rotate_degree(cls, filename):
-        """
-        Extract orientation information from an image.
+    @property
+    def processing_state(self):
+        return MediaState.get_state(self.processing_state_code)
 
-        We must use 3rd party tool here since there is a number of standards:
-        - EXIF
-        - XMP
-        - IPTC
-        - chunks (https://en.wikipedia.org/wiki/Portable_Network_Graphics#Ancillary_chunks)
-
-        We use exiftool that is a standart in extracting metadata from images.
-        """
-        from storage.exiftool import get_exiftool_info
-
-        metadata = get_exiftool_info(filename)
-
-        orientation = [(k, v)
-                       for k, v in metadata.items()
-                       if 'orientation' in k.lower()]
-
-        if not orientation:
-            # Was not found
-            return None
-
-        orientation_values = set(v for k, v in orientation)
-
-        if len(orientation) > 1 and len(orientation_values) == 1:
-            logger.warning(f'Multiple orientations found: {orientation}')
-        elif len(orientation) > 1:
-            raise NotImplementedError(f'Multiple orientations found: {orientation}')
-
-        orientation = orientation[0]
-
-        try:
-            # First check exact match
-            return cls.ORIENTATIONS_NO_DEGREE[orientation[1]]
-        except KeyError:
-            pass
-
-        # Try to parse orientation
-        m = cls.RE_ORIENTATION.search(orientation[1])
-
-        if not m:
-            # Failed to parse
-            raise NotImplementedError(f'Unsupported orientation: {orientation[1]}')
-
-        degree = int(m.group('degree'), 10)
-
-        if m.group('counter'):
-            # counter-clockwise
-            return degree
-
-        # clock-wise
-        return 360 - degree
-
-    @classmethod
-    def get_video_clean_metadata(cls, filename):
-        from storage.ffmpeg import get_ffprobe_info
-
-        metadata = get_ffprobe_info(filename)
-
-        streams = metadata['streams']
-
-        video_streams = [stream for stream in streams if stream['codec_type'] == 'video']
-
-        if not video_streams:
-            return
-
-        if len(video_streams) != 1:
-            raise NotImplementedError(f'Videos with {len(video_streams)} video streams are not supported')
-
-        video = video_streams[0]
-
-        # yield 'rotate', video['side_data_list'][0]['rotation']
-        # yield 'rotate', int(video['tags']['rotate'], 10)
-
-        yield 'duration', datetime.timedelta(seconds=float(video['duration']))
+    @processing_state.setter
+    def processing_state(self, value):
+        assert issubclass(value, MediaState), f'{value!r} must be instance of MediaState'
+        self.processing_state_code = value.STATE_CODE
 
     @classmethod
     def process(cls, sender, instance, **kwargs):
