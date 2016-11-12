@@ -62,8 +62,7 @@ class Media(MediaConstMixin, models.Model):
     )
 
     def generate_content_filename(instance, filename):
-        # TODO: Add shoot date and extension by mime
-        return f'content/{instance.uploader_id}/{instance.sha1_hex}_{instance.size_bytes}'
+        return 'content/{0.uploader_id}/{0.sha1_hex}_{0.size_bytes}'.format(instance)
 
     def generate_thumbnail_filename(instance, filename):
         return f'thumbnail/{instance.uploader_id}/{instance.id}.jpg'
@@ -77,8 +76,10 @@ class Media(MediaConstMixin, models.Model):
         help_text=_('User that uploaded the media. He owns it.')
     )
     session_id = models.UUIDField()
-    shot = models.ForeignKey(Shot, on_delete=models.CASCADE, null=True)
+    # shot = models.ForeignKey(Shot, on_delete=models.CASCADE, null=True)
     media_type = models.IntegerField(choices=MEDIA_TYPES, null=True)
+
+    shoot_at = models.DateTimeField(null=True)
 
     # actual values
     width = models.IntegerField(null=True, blank=True, help_text=_('Width for use'))
@@ -88,20 +89,20 @@ class Media(MediaConstMixin, models.Model):
     content = models.FileField(upload_to=generate_content_filename)
     size_bytes = models.BigIntegerField()
 
-    content_width = models.IntegerField(null=True, blank=True, help_text=_('Content width, before rotation'))
-    content_height = models.IntegerField(null=True, blank=True, help_text=_('Content height, before rotation'))
+    # content_width = models.IntegerField(null=True, blank=True, help_text=_('Content width, before rotation'))
+    # content_height = models.IntegerField(null=True, blank=True, help_text=_('Content height, before rotation'))
 
     needed_rotate_degree = models.IntegerField(
         null=True, blank=True,  # null means we did not extract if from the media, ask user for correct orientation
         help_text=_('How much content data need to be rotated to get correct orientation'),
     )
 
-    is_default = models.BooleanField(default=False)
+    # is_default = models.BooleanField(default=False)
 
     processing_state_code = models.IntegerField(default=InitialMediaState.STATE_CODE)
 
     mimetype = models.CharField(max_length=127)
-    workflow_type = models.IntegerField(null=True, blank=True, choices=MediaConstMixin.WORKFLOW_TYPES)
+    # workflow_type = models.IntegerField(null=True, blank=True, choices=MediaConstMixin.WORKFLOW_TYPES)
 
     source_filename = models.CharField(max_length=255, blank=True)
     source_lastmodified = models.DateTimeField(null=True)
