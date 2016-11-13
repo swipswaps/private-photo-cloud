@@ -132,6 +132,8 @@ class MetadataMediaState(MediaState):
             media.metadata = get_exiftool_info(media.content.path)
 
             media.needed_rotate_degree = cls.get_image_needed_rotate_degree(media.metadata)
+
+            # TODO: Put flag and some fake value if failed to extract
             media.shoot_at = cls.get_image_shoot_date(media.metadata)
 
         elif media.media_type == media.MEDIA_VIDEO:
@@ -143,11 +145,13 @@ class MetadataMediaState(MediaState):
             media.needed_rotate_degree = 0
 
             media.duration = datetime.timedelta(seconds=float(video_stream['duration']))
+            # TODO: Put flag and some fake value if failed to extract
             media.shoot_at = cls.get_video_shoot_date(media.metadata)
 
         else:
             # No rotation is needed, do not prompt user for it
             media.needed_rotate_degree = 0
+            # TODO: Put flag and some fake value for shoot_at
 
         logger.info(f'Shoot at: {media.shoot_at!r}')
 
