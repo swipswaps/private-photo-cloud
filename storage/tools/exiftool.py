@@ -1,5 +1,10 @@
+import logging
+import re
+
+logger = logging.getLogger(__name__)
+
+
 def get_exiftool_info(filename, numeric_values=False):
-    import os
     import tempfile
     import json
     from subprocess import Popen
@@ -22,3 +27,66 @@ def get_exiftool_info(filename, numeric_values=False):
         # for some reason ujson gets a segmentation error here, so use standard JSON library
         # result is 1-item list with a dict
         return json.load(f)[0]
+
+
+def extract_embed_image(filename, image_type, target=None, hide_log=False):
+    """
+    Sources:
+        exiftool -b -ThumbnailImage image.jpg > thumbnail.jpg
+             Save thumbnail image from "image.jpg" to a file called
+             "thumbnail.jpg".
+
+        exiftool -b -JpgFromRaw -w _JFR.JPG -ext NEF -r .
+             Recursively extract JPG image from all Nikon NEF files in the
+             current directory, adding "_JFR.JPG" for the name of the output JPG
+             files.
+
+        exiftool -a -b -W %d%f_%t%-c.%s -preview:all dir
+             Extract all types of preview images (ThumbnailImage, PreviewImage,
+             JpgFromRaw, etc.) from files in directory "dir", adding the tag
+             name to the output preview image file names.
+    """
+    import os
+    import tempfile
+    from subprocess import Popen
+
+    target = target or tempfile.TemporaryFile("w+b")
+
+    cmd = ("exiftool", "-b", f'-{image_type}', filename)
+
+    with open(os.devnull,"wb") as stderr:
+        p = Popen(cmd, stdout=target, stderr=stderr if hide_log else None)
+        p.wait()
+
+    target.seek(0)
+
+    assert not p.returncode
+
+    return target
+
+
+RE_BINARY_VALUE = re.compile(r'^[(]Binary data (\d+) bytes, use -b option to extract[)]$')
+
+
+def list_embed_resources(metadata):
+    data = ((k, RE_BINARY_VALUE.search(v)) for k, v in metadata.items() if isinstance(v, str))
+    return {k.rsplit(':', 1)[1]: int(m.group(1), 10) for k, m in data if m}
+
+
+def extract_embed_thubmail(metadata, filename, target=None, hide_log=False):
+    # Get binary resources
+    binary_resources = list_embed_resources(metadata)
+
+    # Sort by size to take first smallest image
+    binary_resources = sorted(binary_resources.items(), key=lambda x: x[1])
+
+    logger.debug(f'Found binary resources: {binary_resources}')
+
+    for k, size in binary_resources:
+        if 'data' in k.lower():
+            # Something like OriginalDecisionData
+            continue
+
+        return extract_embed_image(filename=filename, image_type=k, target=target, hide_log=hide_log)
+
+    raise ValueError(f'Found no image in resources: {binary_resources}')

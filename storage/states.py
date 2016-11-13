@@ -14,7 +14,7 @@ from storage import helpers
 from storage.helpers import resolve_dict
 from storage.tools import ffmpeg
 from storage.tools.binhash import get_sha1_hex
-from storage.tools.exiftool import get_exiftool_info
+from storage.tools.exiftool import get_exiftool_info, extract_embed_thubmail
 
 logger = logging.getLogger(__name__)
 
@@ -369,7 +369,7 @@ class ThumbnailMediaState(MediaState):
     STATE_CODE = 3
 
     THUMBNAIL_RESIZE_SETTINGS = {
-        'size': (128, 128),
+        'size': (160, 160),
         'resample': Image.LANCZOS,  # Image.NEAREST | Image.BILINEAR | Image.BICUBIC | Image.LANCZOS
     }
 
@@ -399,41 +399,33 @@ class ThumbnailMediaState(MediaState):
 
         thumbnail_file = SimpleUploadedFile(name='thumbnail.jpg', content=b'', content_type='image/jpeg')
 
-        # TODO: If media is RAW image => extract thumbnail from file metadata
-        """
-        exiftool -b -ThumbnailImage image.jpg > thumbnail.jpg
-             Save thumbnail image from "image.jpg" to a file called
-             "thumbnail.jpg".
-
-        exiftool -b -JpgFromRaw -w _JFR.JPG -ext NEF -r .
-             Recursively extract JPG image from all Nikon NEF files in the
-             current directory, adding "_JFR.JPG" for the name of the output JPG
-             files.
-
-        exiftool -a -b -W %d%f_%t%-c.%s -preview:all dir
-             Extract all types of preview images (ThumbnailImage, PreviewImage,
-             JpgFromRaw, etc.) from files in directory "dir", adding the tag
-             name to the output preview image file names.
-        """
-
         try:
             with open(source.path, 'rb') as f:
-                with Image.open(f) as image:
-                    image.thumbnail(**cls.THUMBNAIL_RESIZE_SETTINGS)
-                    # TODO: Sharpen by taste or multi-step downsampling
-
-                    # Rotate thumbnail, not whole image
-                    if media.needed_rotate_degree:
-                        # PIL rotate rotates counter clockwise => invert it
-                        thumbnail = image.rotate(-media.needed_rotate_degree, expand=True)
-                    else:
-                        thumbnail = image
-
-                    thumbnail.save(thumbnail_file, **cls.THUMBNAIL_SETTINGS)
-
-            media.thumbnail = thumbnail_file
+                media.thumbnail = cls.generate_thumbnail_from_fp(f=f, target=thumbnail_file,
+                                                                 needed_rotate_degree=media.needed_rotate_degree)
         except OSError as ex:
-            logger.exception(f'Failed to extract thumbnail for {media.mimetype!r}')
+            # Fallback to embed thumbnail
+            logger.warning(f'Failed to generate thumbnail from {media.mimetype!r} file => try embed resource')
+            with tempfile.TemporaryFile('w+b') as embed_image:
+                extract_embed_thubmail(media.metadata, source.path, target=embed_image)
+                media.thumbnail = cls.generate_thumbnail_from_fp(f=embed_image, target=thumbnail_file,
+                                                                 needed_rotate_degree=media.needed_rotate_degree)
+
+    @classmethod
+    def generate_thumbnail_from_fp(cls, f, target, needed_rotate_degree):
+        with Image.open(f) as image:
+            image.thumbnail(**cls.THUMBNAIL_RESIZE_SETTINGS)
+            # TODO: Sharpen by taste or multi-step downsampling
+
+            # Rotate thumbnail, not whole image
+            if needed_rotate_degree:
+                # PIL rotate rotates counter clockwise => invert it
+                thumbnail = image.rotate(-needed_rotate_degree, expand=True)
+            else:
+                thumbnail = image
+
+            thumbnail.save(target, **cls.THUMBNAIL_SETTINGS)
+        return target
 
 
 class OptimizeForWebMediaState(MediaState):
