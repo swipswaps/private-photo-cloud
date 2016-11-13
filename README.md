@@ -13,15 +13,27 @@ With this application you would be able to:
 * Advanced upload capabilities:
   * Check for duplicates before upload (full content hashing)
   * Handle dozents of file (worked with 10.000 files)
-  * Multi-thread upload (3 uploads in parallel)
+  * Multi-threaded upload (3 uploads in parallel)
   * [PLANNED] Upload files by chunks with resume feature
 * Automatic processing and classification during upload:
   * Automatic metadata extraction from images and videos
-  * Automatic generation of image and video thumbnail
+  * Automatic generation of image (also RAW) and video thumbnail
   * Automatic image and video rotation according to metadata
   * [PLANNED] Automatic classification by shoot date
-  * [PLANNED] Automatic grouping of RAW and JPEG images
+* De-duplicating capabilities:
+  * Binary duplicates are not possible (check full content hash)
+  * [PLANNED] Automatic grouping of RAW and JPEG images as a single photo
+  * [PLANNED] Automatic grouping of images shot at the same time as a single shot
+  * [PLANNED] Automatic grouping of images shot as about the same tim as a single shot-burst
 * TODO
+
+## Why
+
+* Web-based
+* Self-hosted
+* Better import (speed, number of files handled)
+* Built-in de-duplicating
+* Built-in grouping of media into shots / shot bursts
 
 ## Status
 
