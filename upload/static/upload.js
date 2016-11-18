@@ -3,8 +3,8 @@ let files2upload_size = 0;
 let files_w_error = [];
 let files_by_hash = {};
 let counter = 1;
-let UPLOAD_QUEUE = 0;
-let UPLOAD_QUEUE_SIZE = 3;
+let UPLOAD_WORKERS_NUM = 0;
+let UPLOAD_WORKERS_NUM_MAX = 3;
 let last_dragenter_target = null;
 
 function initUpload() {
@@ -222,12 +222,12 @@ function eraseUploadState() {
     files2upload_size = 0
     files_w_error = []
     files_by_hash = {}
-    UPLOAD_QUEUE = 0
+    UPLOAD_WORKERS_NUM = 0
     */
 }
 
 function processUploadQueue() {
-    if(!(files2upload.length + UPLOAD_QUEUE)) {
+    if(!(files2upload.length + UPLOAD_WORKERS_NUM)) {
         // Once all uploads are finished -- reset the state
         eraseUploadState();
         return
@@ -235,16 +235,16 @@ function processUploadQueue() {
 
     let upload_status_div = document.getElementById('upload_remaining');
     upload_status_div.classList.remove('hidden');
-    upload_status_div.innerText = `${files2upload.length + files_w_error.length + UPLOAD_QUEUE} files: ${bytes2text(files2upload_size)}`;
+    upload_status_div.innerText = `${files2upload.length + files_w_error.length + UPLOAD_WORKERS_NUM} files: ${bytes2text(files2upload_size)}`;
 
     let num, file;
 
     while(true) {
         // try to acquire worker
-        num = ++UPLOAD_QUEUE;
-        if(num > UPLOAD_QUEUE_SIZE) {
+        num = ++UPLOAD_WORKERS_NUM;
+        if(num > UPLOAD_WORKERS_NUM_MAX) {
             // release worker
-            return UPLOAD_QUEUE--;
+            return UPLOAD_WORKERS_NUM--;
         }
         // worker is ready to process
 
@@ -253,7 +253,7 @@ function processUploadQueue() {
 
         if( !file) {
             // release worker
-            return UPLOAD_QUEUE--;
+            return UPLOAD_WORKERS_NUM--;
         }
 
         // process file
@@ -265,7 +265,7 @@ function processUploadQueue() {
 
 function finishFileUpload(file) {
     // release worker
-    UPLOAD_QUEUE--;
+    UPLOAD_WORKERS_NUM--;
     files2upload_size -= file.file.size;
     document.getElementById(`upload_${file.id}`).remove();
 
@@ -288,7 +288,7 @@ function finishFileUpload(file) {
 }
 
 function errorFileUpload(file) {
-    UPLOAD_QUEUE--;
+    UPLOAD_WORKERS_NUM--;
     files_w_error.push(file);
     document.getElementById(`upload_${file.id}`).classList.add('error');
     processUploadQueue();
