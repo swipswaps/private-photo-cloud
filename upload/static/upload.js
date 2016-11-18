@@ -4,7 +4,7 @@ let files_w_error = [];
 let counter = 1;
 let UPLOAD_QUEUE = 0;
 let UPLOAD_QUEUE_SIZE = 3;
-let lastDropTarget = null;
+let last_dragenter_target = null;
 
 function initUpload() {
     document.documentElement.addEventListener("dragenter", dragenter, false);
@@ -13,7 +13,8 @@ function initUpload() {
     document.documentElement.addEventListener("drop", drop, false);
 }
 
-/*
+/* Drag-n-Drop
+
 Drag and dro is rather complex thing. By default dragenter and dragleave runs on parent and ALL children.
 So that if we listen to all events, we have a lot of garbage.
 
@@ -33,8 +34,8 @@ Solution: only if we dragleave the element we dragenter-ed last -> this leave sh
 */
 
 function dragenter(e) {
-    // track last element where we moved files to. it always runs BEFORE dragleave on child element.
-    lastDropTarget = e.target;
+    // track last element we dragenter. It always runs BEFORE dragleave of another element (see Drag-n-Drop topic).
+    last_dragenter_target = e.target;
     e.preventDefault();
     enableDrop(e);
 }
@@ -42,7 +43,7 @@ function dragenter(e) {
 function dragleave(e) {
     e.preventDefault();
 
-    if(e.target !== lastDropTarget) {
+    if(e.target !== last_dragenter_target) {
         return;
     }
     disableDrop(e);
