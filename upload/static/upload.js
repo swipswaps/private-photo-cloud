@@ -150,17 +150,38 @@ function sha1(text) {
       });
   }
 
+function getSizeGroup(size) {
+    if(size < 1000000) {
+        return 0;
+    }
+    if(size < 7000000) {
+        return 1;
+    }
+    if(size < 20000000) {
+        return 2;
+    }
+    return 3;
+}
+
+function getTypeGroup(type) {
+    type = type.split('/')[0];
+    if(type == 'image') {
+        return 0;
+    }
+    if(type == 'video') {
+        return 1;
+    }
+    return 2;
+}
+
+let CLASS_BY_GROUP = ['tiny', 'small', 'medium', 'large'];
+let CLASS_BY_TYPE = ['type_image', 'type_video', 'type_other'];
+
 function renderUploadItem(file_obj) {
     let div = document.createElement('div');
 
     div.setAttribute('id', `upload_${file_obj.id}`);
-    div.classList.add('upload_file');
-
-    let content_type = file_obj.file.type.split('/')[0];
-
-    if(content_type) {
-        div.classList.add(`type_${content_type}`);
-    }
+    div.classList.add('upload_file', CLASS_BY_TYPE[file_obj.type_group], CLASS_BY_GROUP[file_obj.size_group]);
 
     let title = [
         file_obj.file.name,
@@ -170,8 +191,6 @@ function renderUploadItem(file_obj) {
     ].join("\n");
 
     div.setAttribute('title', title);
-
-    // TODO: Generate different size for block depending on the file size
 
     let progress_div = document.createElement('div');
     progress_div.setAttribute('id', `upload_${file_obj.id}_progress`);
@@ -196,18 +215,44 @@ function renderUploadedItem(file_obj) {
     return element;
 }
 
+function compareFiles(a, b) {
+    if(a.size_group == b.size_group && a.type_group == b.type_group) {
+        return 0;
+    }
+    if((a.size_group < b.size_group) || (a.size_group == b.size_group && a.type_group < b.type_group)) {
+        return -1;
+    }
+    return 1;
+}
+
 function uploadFiles(files) {
     let upload_div = document.getElementById('images_to_upload');
 
     upload_div.classList.remove('hidden');
 
-    for(let file of files) {
-        let file_obj = {file: file, id: counter++};
-        files2upload.push(file_obj);
-        files2upload_size += file.size;
+    let files_list = [];
 
+    for(let file of files) {
+        files_list.push({
+            file: file,
+            id: counter++,
+            size_group: getSizeGroup(file.size),
+            type_group: getTypeGroup(file.type)
+        });
+        files2upload_size += file.size;
+    }
+
+    files_list.sort(compareFiles);
+
+    // process already processed files
+    for(let file_obj of files_list) {
         upload_div.appendChild(renderUploadItem(file_obj));
     }
+
+    // append new files to existing queue
+    Array.prototype.push.apply(files2upload, files_list);
+
+    files2upload.sort(compareFiles);
 
     processUploadQueue();
 }

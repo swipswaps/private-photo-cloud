@@ -29,10 +29,10 @@
 }
 
 #images_to_upload {
-	display: inline-block;
-	width: 20%;
-	vertical-align: top;
-	line-height: 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: flex-start;
 }
 
 #uploaded_images {
@@ -43,20 +43,17 @@
 }
 
 .upload_file {
-	width: 20px;
-	height: 20px;
-	display: inline-block;
-	margin: 1px 0 0 1px;
-	border: solid 1px #CCC;
-	background-color: blue;
+    display: inline-flex;
+    margin: 1px 0 0 1px;
+    border: solid 1px black;
 }
 
 .upload_file.type_image {
-	background-color: green;
+    border-color: darkgreen;
 }
 
 .upload_file.type_video {
-	background-color: red;
+    border-color: orange;
 }
 
 .progress {
@@ -86,8 +83,36 @@ img.media {
 /* TODO: Something better for hover effect. Maybe another absolute-positioned DIV on top */
 
 img.media:hover {
-	max-width: 128px;
-	max-height: 128px;
+	max-width: 160px;
+	max-height: 160px;
 }
 
-/* TODO: Somehow indicate that given image a video */
+.tiny {
+    width: 5px;
+    height: 5px;
+    background-color: green;
+}
+
+.small {
+    width: 10px;
+    height: 10px;
+    background-color: yellowgreen;
+}
+
+.medium {
+    width: 20px;
+    height: 20px;
+    background-color: yellow;
+}
+
+.large {
+    width: 30px;
+    height: 30px;
+    background-color: #ffe3b3;
+}
+
+/* if size class changes -- break a line */
+.tiny + :not(.tiny), .small + :not(.small), .medium + :not(.medium), .large + :not(.large) {
+    page-break-before: always;
+    break-before: always;
+}
