@@ -138,7 +138,7 @@ class MetadataMediaState(MediaState):
             media.needed_rotate_degree = cls.get_image_needed_rotate_degree(media.metadata)
 
             # TODO: Put flag and some fake value if failed to extract
-            media.shoot_at = cls.get_image_shoot_date(media.metadata)
+            media.shot_at = cls.get_image_shoot_date(media.metadata)
 
         elif media.media_type == media.MEDIA_VIDEO:
             media.metadata = ffmpeg.get_ffprobe_info(media.content.path)
@@ -150,14 +150,14 @@ class MetadataMediaState(MediaState):
 
             media.duration = datetime.timedelta(seconds=float(video_stream['duration']))
             # TODO: Put flag and some fake value if failed to extract
-            media.shoot_at = cls.get_video_shoot_date(media.metadata)
+            media.shot_at = cls.get_video_shoot_date(media.metadata)
 
         else:
             # No rotation is needed, do not prompt user for it
             media.needed_rotate_degree = 0
-            # TODO: Put flag and some fake value for shoot_at
+            # TODO: Put flag and some fake value for shot_at
 
-        logger.info(f'Shoot at: {media.shoot_at!r}')
+        logger.info(f'Shot at: {media.shot_at!r}')
 
         content_suffix = Media.generate_content_filename(media, None)
         content_path = os.path.join(settings.MEDIA_ROOT, content_suffix)
@@ -188,7 +188,7 @@ class MetadataMediaState(MediaState):
         logger.debug(f'image shoot dates: {shoot_dates}')
 
         for k, v in shoot_dates:
-            return cls.parse_shoot_at(v)
+            return cls.parse_shot_at(v)
 
         raise NotImplementedError(f'Failed to extract image shoot date from:\n{json.dumps(dict(metadata), indent=4)}')
 
@@ -216,7 +216,7 @@ class MetadataMediaState(MediaState):
         logger.debug(f'video shoot dates: {shoot_dates}')
 
         for k, v in shoot_dates:
-            return cls.parse_shoot_at(v)
+            return cls.parse_shot_at(v)
 
         raise NotImplementedError(f'Failed to extract video shoot date from:\n{json.dumps(dict(metadata), indent=4)}')
 
@@ -227,7 +227,7 @@ class MetadataMediaState(MediaState):
     )
 
     @classmethod
-    def parse_shoot_at(cls, value):
+    def parse_shot_at(cls, value):
         # Fix too short microseconds section (14:29:25.018 => 14:29:25.01800)
         value = re.sub(r'(?<=[.])(\d+)$', lambda m: m.group(1).ljust(6, '0'), value)
 
