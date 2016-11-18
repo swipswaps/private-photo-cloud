@@ -15,7 +15,7 @@ from storage import helpers
 from storage.helpers import resolve_dict
 from storage.tools import ffmpeg
 from storage.tools.binhash import get_sha1_hex
-from storage.tools.exiftool import get_exiftool_info, extract_embed_thubmail
+from storage.tools.exiftool import get_exiftool_info, extract_any_embed_image
 
 logger = logging.getLogger(__name__)
 
@@ -424,7 +424,9 @@ class ThumbnailMediaState(MediaState):
             # Fallback to embed thumbnail
             logger.warning(f'Failed to generate thumbnail from {media.mimetype!r} file => try embed resource')
             with tempfile.TemporaryFile('w+b') as embed_image:
-                extract_embed_thubmail(media.metadata, source.path, target=embed_image)
+                # Use biggest image to generate thumbnail
+                extract_any_embed_image(media.metadata, source.path, target=embed_image, biggest=True)
+
                 media.thumbnail = cls.generate_thumbnail_from_fp(f=embed_image, target=thumbnail_file,
                                                                  needed_rotate_degree=media.needed_rotate_degree)
 

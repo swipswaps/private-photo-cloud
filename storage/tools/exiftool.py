@@ -1,6 +1,8 @@
 import logging
 import re
 
+from PIL import Image
+
 logger = logging.getLogger(__name__)
 
 
@@ -29,7 +31,7 @@ def get_exiftool_info(filename, numeric_values=False):
         return json.load(f)[0]
 
 
-def extract_embed_image(filename, image_type, target=None, hide_log=False):
+def extract_embed_resource(filename, resource, target=None, hide_log=False):
     """
     Sources:
         exiftool -b -ThumbnailImage image.jpg > thumbnail.jpg
@@ -52,7 +54,7 @@ def extract_embed_image(filename, image_type, target=None, hide_log=False):
 
     target = target or tempfile.TemporaryFile("w+b")
 
-    cmd = ("exiftool", "-b", f'-{image_type}', filename)
+    cmd = ("exiftool", "-b", f'-{resource}', filename)
 
     with open(os.devnull,"wb") as stderr:
         p = Popen(cmd, stdout=target, stderr=stderr if hide_log else None)
@@ -73,20 +75,35 @@ def list_embed_resources(metadata):
     return {k.rsplit(':', 1)[1]: int(m.group(1), 10) for k, m in data if m}
 
 
-def extract_embed_thubmail(metadata, filename, target=None, hide_log=False):
+def check_if_image(fp):
+    try:
+        # Do not use Image context manager since it would close fp
+        Image.open(fp)
+        return True
+    except OSError:
+        return False
+    finally:
+        fp.seek(0)
+
+
+def extract_any_embed_image(metadata, filename, target=None, hide_log=False, biggest=False):
     # Get binary resources
     binary_resources = list_embed_resources(metadata)
 
-    # Sort by size to take first smallest image
-    binary_resources = sorted(binary_resources.items(), key=lambda x: x[1])
+    # Sort by size
+    binary_resources = sorted(binary_resources.items(), key=lambda x: x[1], reverse=biggest)
 
     logger.debug(f'Found binary resources: {binary_resources}')
 
-    for k, size in binary_resources:
-        if 'data' in k.lower():
-            # Something like OriginalDecisionData
+    for resource, size in binary_resources:
+        # We could check if name contains "data", e.g. "OriginalDecisionData" but we could simply check for an image
+        result = extract_embed_resource(filename=filename, resource=resource, target=target, hide_log=hide_log)
+
+        if not check_if_image(result):
+            logger.info(f'Resource {resource} is not a image')
             continue
 
-        return extract_embed_image(filename=filename, image_type=k, target=target, hide_log=hide_log)
+        logger.info(f'Used resource {resource} as an image')
+        return result
 
     raise ValueError(f'Found no image in resources: {binary_resources}')
