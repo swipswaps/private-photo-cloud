@@ -138,20 +138,16 @@ class Media(MediaConstMixin, models.Model):
 
     # hashers properties, are often used
     @property
-    def sha1(self):
-        return base64.b85decode(self.sha1_b85)
-
-    @sha1.setter
-    def sha1(self, digest):
-        self.sha1_b85 = base64.b85encode(digest)
-
-    @property
     def sha1_hex(self):
-        return self.sha1.hex()
+        return base64.b85decode(self.sha1_b85).hex()
 
     @sha1_hex.setter
     def sha1_hex(self, digest_hex):
-        self.sha1 = binascii.unhexlify(digest_hex)
+        self.sha1_b85 = base64.b85encode(binascii.unhexlify(digest_hex))
+
+    @staticmethod
+    def hex_to_base85(value):
+        return base64.b85encode(binascii.unhexlify(value))
     # /hashers properties
 
     @property

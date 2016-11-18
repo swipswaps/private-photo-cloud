@@ -1,9 +1,15 @@
+import logging
 import datetime
+
 from django.contrib.auth.decorators import login_required
+from django.db import IntegrityError
 from django.template.response import TemplateResponse
 from django.http import JsonResponse
 
 from storage import models
+
+
+logger = logging.getLogger(__name__)
 
 @login_required
 def upload(request):
@@ -20,17 +26,21 @@ def upload_file(request):
 
     data = request.POST
 
+    pk = {
+        'uploader_id': request.user.id,
+        'sha1_b85': models.Media.hex_to_base85(data['sha1']),
+        'size_bytes': int(data['size'], 10)
+    }
+
     media = models.Media(
-        uploader_id=request.user.id,
         session_id=data['session_id'],
         source_filename=data['name'],
-        size_bytes=int(data['size'], 10),
         mimetype=data['type'],
         # last_modified = microseconds since epoch
         source_lastmodified=datetime.datetime.fromtimestamp(int(data['last_modified'], 10) / 1000,
                                                             datetime.timezone.utc),
-        sha1_hex=data['sha1'],
         content=request.FILES['file'],
+        **pk
     )
 
     try:
@@ -41,6 +51,9 @@ def upload_file(request):
         })
         resp.status_code = 400  # HTTP 400 Bad request
         return resp
+    except IntegrityError:
+        logger.warning(f'Uploaded duplicate image: {pk}')
+        media = models.Media.objects.get(**pk)
 
     resp = JsonResponse({
         'media': {
