@@ -1,6 +1,7 @@
 let files2upload = [];
 let files2upload_size = 0;
 let files_w_error = [];
+let files_by_hash = {};
 let counter = 1;
 let UPLOAD_QUEUE = 0;
 let UPLOAD_QUEUE_SIZE = 3;
@@ -211,14 +212,30 @@ function uploadFiles(files) {
     processUploadQueue();
 }
 
-function processUploadQueue() {
+function eraseUploadState() {
     let upload_status_div = document.getElementById('upload_remaining');
+    upload_status_div.classList.add('hidden');
+    upload_status_div.innerText = '';
+    files_by_hash = {};
+    /* Assert following state:
+    files2upload = []
+    files2upload_size = 0
+    files_w_error = []
+    files_by_hash = {}
+    UPLOAD_QUEUE = 0
+    */
+}
+
+function processUploadQueue() {
     if(!(files2upload.length + UPLOAD_QUEUE)) {
-        upload_status_div.classList.add('hidden');
-    } else {
-        upload_status_div.classList.remove('hidden');
-        upload_status_div.innerText = `${files2upload.length + files_w_error.length + UPLOAD_QUEUE} files: ${bytes2text(files2upload_size)}`;
+        // Once all uploads are finished -- reset the state
+        eraseUploadState();
+        return
     }
+
+    let upload_status_div = document.getElementById('upload_remaining');
+    upload_status_div.classList.remove('hidden');
+    upload_status_div.innerText = `${files2upload.length + files_w_error.length + UPLOAD_QUEUE} files: ${bytes2text(files2upload_size)}`;
 
     let num, file;
 
@@ -256,14 +273,16 @@ function finishFileUpload(file) {
 
     uploaded_div.classList.remove('hidden');
 
-    let media_div = renderUploadedItem(file);
+    if(!file.is_duplicate) {
+        let media_div = renderUploadedItem(file);
 
-    let old_media_div = document.getElementById(media_div.id);
-    if(old_media_div) {
-        old_media_div.remove();
+        let old_media_div = document.getElementById(media_div.id);
+        if(old_media_div) {
+            old_media_div.remove();
+        }
+
+        uploaded_div.appendChild(media_div);
     }
-
-    uploaded_div.appendChild(media_div);
 
     processUploadQueue();
 }
@@ -291,7 +310,19 @@ function get_file_sha1(file) {
     });
 }
 
-function check_for_duplicated(file) {
+function check_duplicate(file) {
+    let source_file = files_by_hash[file.sha1];
+    if(source_file) {
+        file.is_duplicate = true;
+        console.info('Prevented duplicate upload', file, 'base', source_file);
+    } else {
+        // for javascript there is no difference in performance if key is not set => skip setting the key
+        files_by_hash[file.sha1] = file;
+    }
+    return file;
+}
+
+function check_already_uploaded(file) {
     return fetch(`/upload/media/sha1_${file.sha1}_${file.file.size}/`, {
         credentials: 'same-origin'
     }).then(function(response){
@@ -324,6 +355,10 @@ function update_progress(file, e) {
 function upload_file(file) {
     if(file.media) {
         console.log('File already uploaded', file);
+        return file;
+    }
+
+    if(file.is_duplicate) {
         return file;
     }
 
@@ -364,7 +399,8 @@ function upload_file(file) {
 
 function uploadFile(file) {
     return get_file_sha1(file)
-    .then(check_for_duplicated)
+    .then(check_duplicate)
+    .then(check_already_uploaded)
     .then(upload_file)
     .then(finishFileUpload)
     .catch(function(err){
