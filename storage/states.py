@@ -9,6 +9,7 @@ import tempfile
 from PIL import Image
 from django.conf import settings
 from django.core.files.uploadedfile import TemporaryUploadedFile, SimpleUploadedFile
+from django.utils import timezone
 
 from storage import helpers
 from storage.helpers import resolve_dict
@@ -245,9 +246,9 @@ class MetadataMediaState(MediaState):
                     1) without TZ adjustment -- time of home region
                     2) with TZ adjustment -- time of current region (see GPS coordinates)
 
-                # TODO: Implement complex logic instead of simple UTC.
+                # TODO: Implement complex logic instead of converting to server TZ.
                 """
-                return dt.replace(tzinfo=datetime.timezone.utc)
+                return timezone.get_current_timezone().localize(dt, is_dst=None)
             return dt
 
         raise NotImplementedError(value)
