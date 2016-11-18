@@ -40,3 +40,12 @@ With this application you would be able to:
 Currently project is in early development state.
 
 Many features are not implemented yet, existing ones are implemented as bare minimum BUT should work.
+
+### De-duplication strategy
+
+Application tries to handle common duplication cases:
+
+* Same image shoot as JPEG and RAW
+  * Has the same device
+  * Taken at the same time
+* TODO

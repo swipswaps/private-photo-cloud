@@ -127,6 +127,9 @@ class MetadataMediaState(MediaState):
         if media.sha1_hex != sha1_hex:
             raise cls.InvalidUploadError(f'actual SHA1 sum does not match declared: {sha1_hex!r} != {media.sha1_hex!r}')
 
+        # It makes no sense to generate SHA1 for image content (i.e. without metadata) since metadata removal is usually
+        # implies re-compression, so content changes.
+
         if media.media_type == media.MEDIA_PHOTO:
             # Alternative: exiv2 (faster but less formats) http://dev.exiv2.org/projects/exiv2/wiki/How_does_Exiv2_compare_to_Exiftool
             media.metadata = get_exiftool_info(media.content.path)
@@ -234,7 +237,16 @@ class MetadataMediaState(MediaState):
                 continue
 
             if not dt.tzinfo:
-                # No timezone info -- assume it is UTC
+                """
+                No timezone provided -- that means date is device date:
+
+                a) for camera -- time of home region
+                b) for smartphone:
+                    1) without TZ adjustment -- time of home region
+                    2) with TZ adjustment -- time of current region (see GPS coordinates)
+
+                # TODO: Implement complex logic instead of simple UTC.
+                """
                 return dt.replace(tzinfo=datetime.timezone.utc)
             return dt
 
