@@ -6,7 +6,7 @@ dj-database-url==0.4.1      # database via URL
 
 djangorestframework==3.5.3  # REST framework
 Markdown==2.6.7             # for REST framework -- browsable API
-django-filter==0.15.3       # for REST framework -- filtering support
+django-filter==1.0.0        # for REST framework -- filtering support
 
 psycopg2==2.6.2             # PostgreSQL connector
 Pillow==3.4.2               # image processing library
