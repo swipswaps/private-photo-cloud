@@ -1,32 +1,61 @@
-var files2upload = [];
-var files2upload_size = 0;
-var files_w_error = [];
-var counter = 1;
-var UPLOAD_QUEUE = 0;
-var UPLOAD_QUEUE_SIZE = 3;
+let files2upload = [];
+let files2upload_size = 0;
+let files_w_error = [];
+let counter = 1;
+let UPLOAD_QUEUE = 0;
+let UPLOAD_QUEUE_SIZE = 3;
+let lastDropTarget = null;
 
 function initUpload() {
-    window.addEventListener("dragenter", dragenter, true);
-    window.addEventListener("dragleave", dragleave, true);
+    document.documentElement.addEventListener("dragenter", dragenter, false);
+    document.documentElement.addEventListener("dragleave", dragleave, false);
     document.documentElement.addEventListener("dragover", dragover, false);
     document.documentElement.addEventListener("drop", drop, false);
 }
 
+/*
+Drag and dro is rather complex thing. By default dragenter and dragleave runs on parent and ALL children.
+So that if we listen to all events, we have a lot of garbage.
+
+Events log for common scenario (move to page -> move to page element -> move to page -> leave page)
+
+1. dragenter @ page
+
+2. dragenter @ sub-element
+3. dragleave @ page         => leave page while already entered sub-element
+
+4. dragenter @ page
+5. dragleave @ sub-element  => leave sub-element while already entered page
+
+6. dragleave @ page         => leave page while last entered page
+
+Solution: only if we dragleave the element we dragenter-ed last -> this leave should be counted.
+*/
+
 function dragenter(e) {
+    // track last element where we moved files to. it always runs BEFORE dragleave on child element.
+    lastDropTarget = e.target;
     e.preventDefault();
     enableDrop(e);
 }
 
 function dragleave(e) {
+    e.preventDefault();
+
+    if(e.target !== lastDropTarget) {
+        return;
+    }
     disableDrop(e);
 }
 
 function dragover(e) {
     e.preventDefault();
+    e.stopPropagation();
 }
 
 function drop(e) {
     e.preventDefault();
+    e.stopPropagation();
     disableDrop(e);
     // unfortunatelly we cannot recognize directories and read their content
     // see https://bugzilla.mozilla.org/show_bug.cgi?id=876480
@@ -45,17 +74,17 @@ function disableDrop(e) {
     document.getElementById('drop-info').classList.add('hidden');
 }
 
-var BYTES_RANGES = [
+let BYTES_RANGES = [
     'B',
     'kB',
     'MB',
     'GB',
-    'TB',
+    'TB'
 ];
 
 function bytes2text(bytes_num) {
-    var num = bytes_num;
-    var level = 0;
+    let num = bytes_num;
+    let level = 0;
     while(num > 1000) {
         level += 1;
         num /= 1000;
@@ -75,7 +104,7 @@ function lpad(num, len) {
 }
 
 function date2text(date) {
-    var n = [
+    let n = [
         date.getFullYear(),
         date.getMonth()+1,
         date.getDate(),
@@ -94,8 +123,8 @@ function date2text(date) {
 function hex(buffer) {
     // Using getUint32 reduces the number of iterations needed (we process 4 bytes each time)
     buffer = uint8_to_uint32(buffer);
-    var chars = [];
-    var padding = '00000000';
+    let chars = [];
+    let padding = '00000000';
     for(let num of buffer) {
         // toString(16) will give the hex representation of the number without padding
         chars.push((padding + num.toString(16)).slice(-padding.length));
@@ -105,8 +134,8 @@ function hex(buffer) {
 
 function uint8_to_uint32(buffer) {
     buffer = new DataView(buffer);
-    var result = new Uint32Array(buffer.byteLength / 4);
-    for(var i=0;i<buffer.byteLength;i+=4) {
+    let result = new Uint32Array(buffer.byteLength / 4);
+    for(let i=0;i<buffer.byteLength;i+=4) {
         result[i / 4] = buffer.getUint32(i);
     }
     return result;
@@ -120,18 +149,18 @@ function sha1(text) {
   }
 
 function renderUploadItem(file_obj) {
-    var div = document.createElement('div');
+    let div = document.createElement('div');
 
     div.setAttribute('id', `upload_${file_obj.id}`);
     div.classList.add('upload_file');
 
-    var content_type = file_obj.file.type.split('/')[0];
+    let content_type = file_obj.file.type.split('/')[0];
 
     if(content_type) {
         div.classList.add(`type_${content_type}`);
     }
 
-    var title = [
+    let title = [
         file_obj.file.name,
         bytes2text(file_obj.file.size),
         file_obj.file.type,
@@ -142,7 +171,7 @@ function renderUploadItem(file_obj) {
 
     // TODO: Generate different size for block depending on the file size
 
-    var progress_div = document.createElement('div');
+    let progress_div = document.createElement('div');
     progress_div.setAttribute('id', `upload_${file_obj.id}_progress`);
     progress_div.classList.add('progress');
     div.appendChild(progress_div);
@@ -152,7 +181,7 @@ function renderUploadItem(file_obj) {
 
 function renderUploadedItem(file_obj) {
     // Media.id is a hard identifier, no need to use any other unique value, e.g. SHA1 sum
-    var element;
+    let element;
     if(file_obj.media.thumbnail) {
         element = document.createElement('img');
         element.setAttribute('src', file_obj.media.thumbnail);
@@ -166,12 +195,12 @@ function renderUploadedItem(file_obj) {
 }
 
 function uploadFiles(files) {
-    var upload_div = document.getElementById('images_to_upload');
+    let upload_div = document.getElementById('images_to_upload');
 
     upload_div.classList.remove('hidden');
 
     for(let file of files) {
-        var file_obj = {file: file, id: counter++};
+        let file_obj = {file: file, id: counter++};
         files2upload.push(file_obj);
         files2upload_size += file.size;
 
@@ -182,7 +211,7 @@ function uploadFiles(files) {
 }
 
 function processUploadQueue() {
-    var upload_status_div = document.getElementById('upload_remaining');
+    let upload_status_div = document.getElementById('upload_remaining');
     if(!(files2upload.length + UPLOAD_QUEUE)) {
         upload_status_div.classList.add('hidden');
     } else {
@@ -190,7 +219,7 @@ function processUploadQueue() {
         upload_status_div.innerText = `${files2upload.length + files_w_error.length + UPLOAD_QUEUE} files: ${bytes2text(files2upload_size)}`;
     }
 
-    var num, file;
+    let num, file;
 
     while(true) {
         // try to acquire worker
@@ -222,13 +251,13 @@ function finishFileUpload(file) {
     files2upload_size -= file.file.size;
     document.getElementById(`upload_${file.id}`).remove();
 
-    var uploaded_div = document.getElementById('uploaded_images');
+    let uploaded_div = document.getElementById('uploaded_images');
 
     uploaded_div.classList.remove('hidden');
 
-    var media_div = renderUploadedItem(file);
+    let media_div = renderUploadedItem(file);
 
-    var old_media_div = document.getElementById(media_div.id);
+    let old_media_div = document.getElementById(media_div.id);
     if(old_media_div) {
         old_media_div.remove();
     }
@@ -249,7 +278,7 @@ function get_file_sha1(file) {
     // TODO: Consider iterative hashing, since we cannot handle >= 3 GB files
     // See: https://lists.w3.org/Archives/Public/public-webcrypto/2016Nov/0000.html
     return new Promise(function(resolve, reject) {
-        var reader = new FileReader();
+        let reader = new FileReader();
         reader.onloadend = function(e){
             crypto.subtle.digest("SHA-1", e.target.result).then(hex).then(resolve, reject);
         };
@@ -275,9 +304,12 @@ function check_for_duplicated(file) {
     });
 }
 
+function escape(s) {
+    return s.replace(/([.*+?\^${}()|\[\]\/\\])/g, '\\$1');
+}
+
 function getCookie(name) {
-    function escape(s) { return s.replace(/([.*+?\^${}()|\[\]\/\\])/g, '\\$1'); };
-    var match = document.cookie.match(RegExp('(?:^|;\\s*)' + escape(name) + '=([^;]*)'));
+    let match = document.cookie.match(new RegExp('(?:^|;\\s*)' + escape(name) + '=([^;]*)'));
     return match ? match[1] : null;
 }
 
@@ -294,7 +326,7 @@ function upload_file(file) {
         return file;
     }
 
-    var data = new FormData();
+    let data = new FormData();
     data.set('session_id', UPLOAD_SESSION_ID);
     data.set('name', file.file.name);
     data.set('size', file.file.size);
@@ -341,7 +373,7 @@ function uploadFile(file) {
 }
 
 function fetch_w_progress(url, settings, onprogress) {
-    var xhr = new XMLHttpRequest();
+    let xhr = new XMLHttpRequest();
     xhr.open(settings.method || 'GET', url, true); // async
 
     if(settings.credentials && settings.credentials != 'omit') {
@@ -349,14 +381,14 @@ function fetch_w_progress(url, settings, onprogress) {
     }
 
     if(settings.headers) {
-        for(var k in settings.headers) {
+        for(let k of Object.keys(settings.headers)) {
             xhr.setRequestHeader(k, settings.headers[k]);
         }
     }
     return new Promise(function(resolve, reject){
         xhr.onerror = reject;
         xhr.onloadend = function(e) {
-            var response = e.target;
+            let response = e.target;
             response.ok = (response.status >= 200 && response.status < 300);
             response.json = function() {
                 return new Promise(function(resolve, reject){
