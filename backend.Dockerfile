@@ -1,4 +1,4 @@
-FROM python:3.6.0b2-alpine
+FROM python:3.6.0b3-alpine
 
 RUN apk --no-cache upgrade\
  && PKG="gcc musl-dev"\
