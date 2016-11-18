@@ -1,2 +1,2 @@
 #!/bin/sh
-docker-compose -f frontend.docker-compose.yaml build
+docker-compose -f frontend.docker-compose.yaml build --pull
