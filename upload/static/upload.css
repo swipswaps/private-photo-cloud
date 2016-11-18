@@ -74,8 +74,8 @@ div.media {
 
 img.media {
 	margin: 5px 0 0 5px;
-	max-width: 64px;
-	max-height: 64px;
+	max-width: 80px;
+	max-height: 80px;
 	vertical-align: middle;
 	border: solid 1px #EEE;
 }
@@ -83,8 +83,21 @@ img.media {
 /* TODO: Something better for hover effect. Maybe another absolute-positioned DIV on top */
 
 img.media:hover {
-	max-width: 160px;
-	max-height: 160px;
+    animation-duration: 0.5s;
+    animation-name: image-hover;
+    max-width: 160px;
+    max-height: 160px;
+}
+
+@keyframes image-hover {
+    from {
+        max-width: 80px;
+        max-height: 80px;
+    }
+    to {
+        max-width: 160px;
+        max-height: 160px;
+    }
 }
 
 .tiny {
