@@ -62,8 +62,8 @@ class Media(MediaConstMixin, models.Model):
     )
 
     def generate_content_filename(instance, filename):
-        if instance.shot_at and instance.content_extension:
-            return 'content/{0.uploader_id}/{0.shot_at:%Y%m}/{0.sha1_hex}_{0.size_bytes}{0.content_extension}'.format(instance)
+        if instance.show_at and instance.content_extension:
+            return 'content/{0.uploader_id}/{0.show_at:%Y%m}/{0.sha1_hex}_{0.size_bytes}{0.content_extension}'.format(instance)
         return 'content/{0.uploader_id}/{0.sha1_hex}_{0.size_bytes}'.format(instance)
 
     def generate_thumbnail_filename(instance, filename):
@@ -82,6 +82,8 @@ class Media(MediaConstMixin, models.Model):
     media_type = models.IntegerField(choices=MEDIA_TYPES, null=True)
 
     shot_at = models.DateTimeField(null=True)
+    # date to me used to show in catalog and to store files; it is a fallback if failed to extract real shot_at date
+    show_at = models.DateTimeField(null=True)
 
     # actual values
     width = models.IntegerField(null=True, blank=True, help_text=_('Width for use'))

@@ -137,8 +137,11 @@ class MetadataMediaState(MediaState):
 
             media.needed_rotate_degree = cls.get_image_needed_rotate_degree(media.metadata)
 
-            # TODO: Put flag and some fake value if failed to extract
-            media.shot_at = cls.get_image_shoot_date(media.metadata)
+            try:
+                media.show_at = media.shot_at = cls.get_image_shoot_date(media.metadata)
+            except ValueError as ex:
+                logger.warning(f'{ex.args[0]} from data: {json.dumps(ex.args[1], indent=4)}')
+                media.show_at = media.source_lastmodified
 
         elif media.media_type == media.MEDIA_VIDEO:
             media.metadata = ffmpeg.get_ffprobe_info(media.content.path)
@@ -149,15 +152,20 @@ class MetadataMediaState(MediaState):
             media.needed_rotate_degree = 0
 
             media.duration = datetime.timedelta(seconds=float(video_stream['duration']))
-            # TODO: Put flag and some fake value if failed to extract
-            media.shot_at = cls.get_video_shoot_date(media.metadata)
+
+            try:
+                media.show_at = media.shot_at = cls.get_video_shoot_date(media.metadata)
+            except ValueError as ex:
+                logger.warning(f'{ex.args[0]} from data: {json.dumps(ex.args[1], indent=4)}')
+                media.show_at = media.source_lastmodified
 
         else:
             # No rotation is needed, do not prompt user for it
             media.needed_rotate_degree = 0
             # TODO: Put flag and some fake value for shot_at
 
-        logger.info(f'Shot at: {media.shot_at!r}')
+        logger.info(f'Show at: {media.show_at!r}'
+                    f', shot at: {"same" if media.shot_at == media.show_at else repr(media.shot_at)}')
 
         content_suffix = Media.generate_content_filename(media, None)
         content_path = os.path.join(settings.MEDIA_ROOT, content_suffix)
@@ -190,7 +198,7 @@ class MetadataMediaState(MediaState):
         for k, v in shoot_dates:
             return cls.parse_shot_at(v)
 
-        raise NotImplementedError(f'Failed to extract image shoot date from:\n{json.dumps(dict(metadata), indent=4)}')
+        raise ValueError('Failed to extract image shoot date', dict(metadata))
 
     IMAGE_SHOOT_KEYS = (
         # More precise should come first
@@ -218,7 +226,7 @@ class MetadataMediaState(MediaState):
         for k, v in shoot_dates:
             return cls.parse_shot_at(v)
 
-        raise NotImplementedError(f'Failed to extract video shoot date from:\n{json.dumps(dict(metadata), indent=4)}')
+        raise ValueError('Failed to extract video shoot date', dict(metadata))
 
     SHOOT_DATE_FORMATS = (
         '%Y:%m:%d %H:%M:%S',        # 2016:10:19 21:08:00
