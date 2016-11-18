@@ -1,5 +1,5 @@
 .hidden {
-	display: none;
+	display: none !important;
 }
 
 .fullscreen {
@@ -14,11 +14,14 @@
 	pointer-events: none;
 	font-family: arial;
 	font-size: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .fullscreen > div {
 	pointer-events: none;
-	display: inline-block;
+	display: inline-flex;
 	background-color: white;
 	margin: 5px;
 	padding: 5px;
