@@ -78,7 +78,7 @@ class MetadataMediaState(MediaState):
     ORIENTATIONS_NO_DEGREE = {
         'Horizontal (normal)': 0,
     }
-    RE_ORIENTATION = re.compile('^Rotate (?P<degree>\d+)(?P<counter> CW)?$')
+    RE_ORIENTATION = re.compile(r'^Rotate (?P<degree>\d+)(?P<counter> CW)?$')
 
     @classmethod
     def get_next_state(cls, media):
