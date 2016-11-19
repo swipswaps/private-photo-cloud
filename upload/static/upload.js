@@ -1,3 +1,5 @@
+'use strict';
+
 let files2upload = [];
 let files2upload_size = 0;
 let files_w_error = [];
@@ -272,6 +274,7 @@ function eraseUploadState() {
 }
 
 function processUploadQueue() {
+    // DEBUG: return;
     if(!(files2upload.length + UPLOAD_WORKERS_NUM)) {
         // Once all uploads are finished -- reset the state
         eraseUploadState();
@@ -312,11 +315,17 @@ function finishFileUpload(file) {
     // release worker
     UPLOAD_WORKERS_NUM--;
     files2upload_size -= file.file.size;
-    document.getElementById(`upload_${file.id}`).remove();
+    // document.getElementById(`upload_${file.id}`).remove();
+
+    let upload_div = document.getElementById(`upload_${file.id}`);
 
     let uploaded_div = document.getElementById('uploaded_images');
 
     uploaded_div.classList.remove('hidden');
+
+    upload_div.addEventListener('transitionend', upload_div.remove.bind(upload_div), false);
+    //addAnimation(upload_div, 'opacity: 0; transition: opacity 0.1s;'); => do via css
+    upload_div.classList.add('uploaded');
 
     if(!file.is_duplicate) {
         let media_div = renderUploadedItem(file);
@@ -327,10 +336,46 @@ function finishFileUpload(file) {
         }
 
         uploaded_div.appendChild(media_div);
+
+        // animateMoveToObj(upload_div, media_div);
+    } else {
+        // TODO: Find an element that should be a source
     }
 
     processUploadQueue();
 }
+
+function deleteCssRule(stylesheet, selector) {
+    for(let i=0;i<stylesheet.cssRules.length;i++) {
+        if(stylesheet.cssRules[i].selectorText === selector) {
+            stylesheet.deleteRule(i);
+            return;
+        }
+    }
+}
+
+function addAnimation(obj, rule) {
+    let stylesheet = document.styleSheets[0];
+    let selector = `#${obj.id}.animate`;
+    stylesheet.insertRule(`${selector}{ ${rule} }`, 0);
+    obj.classList.add('animate');
+    obj.addEventListener('transitionend', function(e){
+        deleteCssRule(stylesheet, selector);
+    }, false);
+}
+
+/*
+function animateMoveToObj(source, target) {
+    let from = source.getBoundingClientRect();
+    let to = target.getBoundingClientRect();
+
+    source.style.position = 'absolute';
+    source.style.left = `${from.left}px`;
+    source.style.top = `${from.top}px`;
+
+    addAnimation(source, `opacity: 0.5; transform: translate(${window.pageXOffset + to.left - from.left}px, ${window.pageYOffset + to.top - from.top}px); width: ${to.width}px; height: ${to.height}px; transition: transform 3s, width 3s, height 3s, opacity 3s;`);
+}
+*/
 
 function errorFileUpload(file) {
     UPLOAD_WORKERS_NUM--;

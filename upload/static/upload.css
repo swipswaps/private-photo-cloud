@@ -30,7 +30,7 @@
 
 #images_to_upload {
     display: flex;
-    flex-direction: row;
+    flex-direction: row-reverse;
     flex-wrap: wrap;
     align-content: flex-start;
 }
@@ -54,6 +54,11 @@
 
 .upload_file.type_video {
     border-color: orange;
+}
+
+.upload_file.uploaded {
+	transition: opacity 0.1s;
+	opacity: 0;
 }
 
 .progress {
