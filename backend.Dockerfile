@@ -12,7 +12,8 @@ COPY requirements /tmp/requirements
 RUN apk --no-cache upgrade\
  && PKG="gcc musl-dev postgresql-dev jpeg-dev openjpeg-dev zlib-dev tiff-dev freetype-dev lcms2-dev libwebp-dev"\
  && apk add --no-cache postgresql libmagic exiftool jpeg openjpeg zlib tiff freetype lcms2 libwebp ffmpeg $PKG\
- && python -m pip install --no-cache-dir --no-dependencies -r /tmp/requirements\
+# --no-dependencies
+ && python -m pip install --no-cache-dir -r /tmp/requirements\
  && apk del $PKG
 
 ENTRYPOINT ["/usr/local/bin/dumb-init", "--verbose", "--single-child"]

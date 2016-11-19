@@ -1,6 +1,11 @@
+import os
 import dj_database_url
 
 from .factory_defaults import *
+
+DEBUG = (os.environ.get('DJANGO_DEBUG') == '1')
+TEMPLATES[0]['OPTIONS']['debug'] = (os.environ.get('DJANGO_TEMPLATE_DEBUG') == '1')
+
 
 DATABASES['default'] = dj_database_url.config(conn_max_age=600)
 
@@ -8,6 +13,19 @@ INSTALLED_APPS += [
     'storage',
     'upload',
 ]
+
+# Celery settings
+
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_URL')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+
+# Since auto-discovery crashes -- list all modules with tasks
+CELERY_IMPORTS = [
+    'upload.tasks',
+]
+
 
 TIME_ZONE = 'Europe/Berlin'
 

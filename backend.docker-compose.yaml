@@ -10,20 +10,30 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: app
       PGDATA: /var/lib/postgresql/data
-  backend:
+  redis:
+    image: redis:3.2.5-alpine
+    command:
+      - redis-server
+      - --appendonly
+      - 'yes'
+  backend: &BACKEND
     build:
       context: .
       dockerfile: backend.Dockerfile
     links:
       - postgres
+      - redis
     environment:
       PYTHONUNBUFFERED: 1
       PYTHONIOENCODING: utf-8
       PYTHONDONTWRITEBYTECODE: 1
       PYTHONWARNINGS: all
       DATABASE_URL: postgres://user:password@postgres/app
+      CELERY_BROKER_URL: redis://redis/1
+      CELERY_RESULT_URL: redis://redis/2
       DJANGO_SETTINGS_MODULE: private_photo_cloud.settings.default
-      PGPASSWORD: password
+      DJANGO_DEBUG: 1
+      DJANGO_TEMPLATE_DEBUG: 1
     volumes:
       - .:/home/app
       - ./media:/home/app/media
@@ -31,12 +41,33 @@ services:
     ports:
       - 80:80
     restart: unless-stopped
-    command: sh -c "
-      until psql -h postgres -U user app -c "--" 2>/dev/null; do
-        echo "wait...";
-        sleep 1;
-      done;
-      ./manage.py migrate;
-      ./manage.py shell -c 'from django.contrib.auth.models import User; u, _ = User.objects.get_or_create(username=\"admin\", is_superuser=True, is_staff=True, is_active=True);u.set_password(\"password\");u.save();';
-      ./manage.py runserver 0.0.0.0:80;
-      "
+    command:
+      - sh
+      - -ec
+      - until psql $$DATABASE_URL -c "--" 2>/dev/null; do
+          echo "wait...";
+          sleep 1;
+        done;
+        ./manage.py migrate;
+        ./manage.py shell -c 'from django.contrib.auth.models import User; u, _ = User.objects.get_or_create(username="admin", is_superuser=True, is_staff=True, is_active=True);u.set_password("password");u.save();';
+        ./manage.py runserver 0.0.0.0:80;
+  worker:
+    <<: *BACKEND
+    ports: []
+    user: nobody
+    environment:
+      PYTHONUNBUFFERED: 1
+      PYTHONIOENCODING: utf-8
+      PYTHONDONTWRITEBYTECODE: 1
+      PYTHONWARNINGS: all
+      DATABASE_URL: postgres://user:password@postgres/app
+      CELERY_BROKER_URL: redis://redis/1
+      CELERY_RESULT_URL: redis://redis/2
+      DJANGO_SETTINGS_MODULE: private_photo_cloud.settings.default
+    command:
+      - celery
+      - -A
+      - private_photo_cloud
+      - worker
+      - --loglevel=INFO
+      - --concurrency=4
