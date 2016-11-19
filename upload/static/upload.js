@@ -181,23 +181,15 @@ let CLASS_BY_TYPE = ['type_image', 'type_video', 'type_other'];
 
 function renderUploadItem(file_obj) {
     let div = document.createElement('div');
-
     div.setAttribute('id', `upload_${file_obj.id}`);
     div.classList.add('upload_file', CLASS_BY_TYPE[file_obj.type_group], CLASS_BY_GROUP[file_obj.size_group]);
-
-    let title = [
+    div.setAttribute('title', [
         file_obj.file.name,
         bytes2text(file_obj.file.size),
         file_obj.file.type,
         `Updated at: ${date2text(new Date(file_obj.file.lastModified))}`
-    ].join("\n");
-
-    div.setAttribute('title', title);
-
-    let progress_div = document.createElement('div');
-    progress_div.setAttribute('id', `upload_${file_obj.id}_progress`);
-    progress_div.classList.add('progress');
-    div.appendChild(progress_div);
+        ].join("\n")
+    );
 
     return div;
 }
@@ -215,6 +207,13 @@ function renderUploadedItem(file_obj) {
     element.setAttribute('id', `media_${file_obj.media.id}`);
     element.classList.add('media');
     return element;
+}
+
+function renderUploadProgress(file_obj) {
+    let div = document.createElement('div');
+    div.setAttribute('id', `upload_${file_obj.id}_progressbar`);
+    div.classList.add(CLASS_BY_TYPE[file_obj.type_group], CLASS_BY_GROUP[file_obj.size_group]);
+    return div;
 }
 
 function compareFiles(a, b) {
@@ -318,14 +317,18 @@ function finishFileUpload(file) {
     // document.getElementById(`upload_${file.id}`).remove();
 
     let upload_div = document.getElementById(`upload_${file.id}`);
-
-    let uploaded_div = document.getElementById('uploaded_images');
-
-    uploaded_div.classList.remove('hidden');
+    let progress_div = document.getElementById(`upload_${file.id}_progressbar`);
 
     upload_div.addEventListener('transitionend', upload_div.remove.bind(upload_div), false);
-    //addAnimation(upload_div, 'opacity: 0; transition: opacity 0.1s;'); => do via css
+    upload_div.classList.remove('inprogress');
     upload_div.classList.add('uploaded');
+
+    if(progress_div) {
+        progress_div.addEventListener('transitionend', progress_div.remove.bind(progress_div), false);
+        progress_div.classList.add('uploaded');
+    }
+
+    let uploaded_div = document.getElementById('uploaded_images');
 
     if(!file.is_duplicate) {
         let media_div = renderUploadedItem(file);
@@ -336,10 +339,6 @@ function finishFileUpload(file) {
         }
 
         uploaded_div.appendChild(media_div);
-
-        // animateMoveToObj(upload_div, media_div);
-    } else {
-        // TODO: Find an element that should be a source
     }
 
     processUploadQueue();
@@ -354,6 +353,7 @@ function deleteCssRule(stylesheet, selector) {
     }
 }
 
+/*
 function addAnimation(obj, rule) {
     let stylesheet = document.styleSheets[0];
     let selector = `#${obj.id}.animate`;
@@ -364,7 +364,6 @@ function addAnimation(obj, rule) {
     }, false);
 }
 
-/*
 function animateMoveToObj(source, target) {
     let from = source.getBoundingClientRect();
     let to = target.getBoundingClientRect();
@@ -387,6 +386,8 @@ function errorFileUpload(file) {
 function get_file_sha1(file) {
     // TODO: Consider iterative hashing, since we cannot handle >= 3 GB files
     // See: https://lists.w3.org/Archives/Public/public-webcrypto/2016Nov/0000.html
+    //      https://lists.w3.org/Archives/Public/public-webcrypto/2016Nov/0001.html
+    //      https://github.com/w3c/webcrypto/issues/73
     return new Promise(function(resolve, reject) {
         let reader = new FileReader();
         reader.onloadend = function(e){
@@ -436,10 +437,10 @@ function getCookie(name) {
 }
 
 function update_progress(file, e) {
-    if(!e.lengthComputable || e.loaded == e.total) {
-        return;
+    if(!e.lengthComputable) {
+        return
     }
-    document.getElementById(`upload_${file.id}_progress`).style.height = `${100 * e.loaded / e.total}%`;
+    document.getElementById(`upload_${file.id}_progressbar`).style.width = `${100 * e.loaded / e.total}%`;
 }
 
 function upload_file(file) {
@@ -451,6 +452,13 @@ function upload_file(file) {
     if(file.is_duplicate) {
         return file;
     }
+
+    // mark as in progress
+    document.getElementById(`upload_${file.id}`).classList.add('inprogress');
+
+    // create progress bar
+    let progress_div = document.getElementById('currently_uploading');
+    progress_div.appendChild(renderUploadProgress(file));
 
     let data = new FormData();
     data.set('session_id', UPLOAD_SESSION_ID);
