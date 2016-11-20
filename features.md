@@ -10,6 +10,7 @@ This document explains features specification, specified as user stories.
 * All provided files are automatically uploaded without user confirmation
 * [TODO] User may drop or select folders, then all contained files would be uploaded
     * [BLOCKER] There is no relevant web standard for this
+    * Update: Chrome and Firefox has it <https://developer.mozilla.org/en-US/Firefox/Releases/50#Files_and_directories>
 * User may select HUGE number (10K) of files for upload
 * [TODO] User may upload HUGE files (~ 8Gb)
 * [TODO] User may resume upload that was interrupted before
