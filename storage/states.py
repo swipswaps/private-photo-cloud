@@ -186,7 +186,8 @@ class MetadataMediaState(MediaState):
         yield mimetypes.guess_extension(media.mimetype)
 
         user_file_extension = os.path.splitext(media.source_filename)[1].lower()
-        logging.error(f'Unknown file extension for {media.mimetype!r} => fallback to user extension {user_file_extension}')
+        logging.error(
+            f'Unknown file extension for {media.mimetype!r} => fallback to user extension {user_file_extension}')
         yield user_file_extension
 
     @classmethod
@@ -229,9 +230,9 @@ class MetadataMediaState(MediaState):
         raise ValueError('Failed to extract video shoot date', dict(metadata))
 
     SHOOT_DATE_FORMATS = (
-        '%Y:%m:%d %H:%M:%S',        # 2016:10:19 21:08:00
-        '%Y:%m:%d %H:%M:%S.%f',     # 2016:11:06 14:29:25.018
-        '%Y-%m-%dT%H:%M:%S%z',      # 2016-10-22T14:39:13+0200
+        '%Y:%m:%d %H:%M:%S',  # 2016:10:19 21:08:00
+        '%Y:%m:%d %H:%M:%S.%f',  # 2016:11:06 14:29:25.018
+        '%Y-%m-%dT%H:%M:%S%z',  # 2016-10-22T14:39:13+0200
     )
 
     @classmethod
@@ -382,7 +383,8 @@ class ScreenshotMediaState(MediaState):
         screenshot = TemporaryUploadedFile(name='screenshot.jpg', content_type='', size=0, charset='')
 
         with tempfile.TemporaryFile('w+b') as screenshot_raw:
-            ffmpeg.get_screenshot(media.content.path, seconds_offset=screenshot_second, hide_log=True, target=screenshot_raw)
+            ffmpeg.get_screenshot(media.content.path, seconds_offset=screenshot_second, hide_log=True,
+                                  target=screenshot_raw)
 
             with Image.open(screenshot_raw) as image:
                 image.save(screenshot, **cls.SCREENSHOT_SETTINGS)
@@ -407,7 +409,7 @@ class ThumbnailMediaState(MediaState):
 
     @classmethod
     def get_next_state(cls, media):
-        return OptimizeForWebMediaState
+        return ClassifyMediaState
 
     @classmethod
     def process(cls, media):
@@ -455,8 +457,23 @@ class ThumbnailMediaState(MediaState):
         return target
 
 
-class OptimizeForWebMediaState(MediaState):
+class ClassifyMediaState(MediaState):
     STATE_CODE = 4
+
+    @classmethod
+    def get_next_state(cls, media):
+        return OptimizeForWebMediaState
+
+    @classmethod
+    def process(cls, media):
+        """Classify the media"""
+        from upload.tasks import run_group_media_into_shot
+        # TODO: Actually do that in background
+        run_group_media_into_shot(media_id=media.pk, session_id=media.session_id)
+
+
+class OptimizeForWebMediaState(MediaState):
+    STATE_CODE = 5
 
     @classmethod
     def get_next_state(cls, media):
@@ -470,7 +487,7 @@ class OptimizeForWebMediaState(MediaState):
 
 
 class ReadyMediaState(MediaState):
-    STATE_CODE = 5
+    STATE_CODE = 6
 
     @classmethod
     def run(cls, media):
@@ -486,7 +503,8 @@ class UnknownMediaState(MediaState):
         # nothing to do
         pass
 
+
 if not MediaState.STATES:
     MediaState.STATES = (InitialMediaState, MetadataMediaState, ScreenshotMediaState, ThumbnailMediaState,
-                         OptimizeForWebMediaState, ReadyMediaState, UnknownMediaState)
+                         ClassifyMediaState, OptimizeForWebMediaState, ReadyMediaState, UnknownMediaState)
     MediaState.STATES = {state.STATE_CODE: state for state in MediaState.STATES}
