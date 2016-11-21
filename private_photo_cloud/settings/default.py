@@ -1,5 +1,6 @@
 import os
 import dj_database_url
+import django_cache_url
 
 from .factory_defaults import *
 
@@ -8,6 +9,14 @@ TEMPLATES[0]['OPTIONS']['debug'] = (os.environ.get('DJANGO_TEMPLATE_DEBUG') == '
 
 
 DATABASES['default'] = dj_database_url.config(conn_max_age=600)
+
+CACHES = {
+    'default': django_cache_url.config(),
+    'persistent': django_cache_url.parse(os.environ.get('CACHE_PERSISTENT_URL')),
+}
+
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "persistent"
 
 INSTALLED_APPS += [
     'storage',
