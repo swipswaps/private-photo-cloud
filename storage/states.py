@@ -464,7 +464,7 @@ class ClassifyMediaState(MediaState):
     def process(cls, media):
         """Classify the media"""
         from upload.tasks import run_group_media_into_shot
-        run_group_media_into_shot(media_id=media.pk, session_id=media.session_id)
+        run_group_media_into_shot.delay(media_id=media.pk, session_id=media.session_id)
 
 
 class OptimizeForWebMediaState(MediaState):
