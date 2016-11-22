@@ -32,7 +32,8 @@ services:
       CACHE_URL: redis://redis:6379/0?timeout=300
       CACHE_PERSISTENT_URL: redis://redis:6379/1
       CELERY_BROKER_URL: redis://redis/2
-      CELERY_RESULT_URL: redis://redis/3
+# Do not store results of Celery tasks
+      # CELERY_RESULT_URL: redis://redis/3
       DJANGO_SETTINGS_MODULE: private_photo_cloud.settings.default
       DJANGO_DEBUG: 1
       DJANGO_TEMPLATE_DEBUG: 1
@@ -66,7 +67,8 @@ services:
       CACHE_URL: redis://redis:6379/0?timeout=300
       CACHE_PERSISTENT_URL: redis://redis:6379/1
       CELERY_BROKER_URL: redis://redis/2
-      CELERY_RESULT_URL: redis://redis/3
+# Do not store results of Celery tasks
+      # CELERY_RESULT_URL: redis://redis/3
       DJANGO_SETTINGS_MODULE: private_photo_cloud.settings.default
     command:
       - celery
