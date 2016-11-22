@@ -319,13 +319,10 @@ function finishFileUpload(file) {
     let upload_div = document.getElementById(`upload_${file.id}`);
     let progress_div = document.getElementById(`upload_${file.id}_progressbar`);
 
-    upload_div.addEventListener('transitionend', upload_div.remove.bind(upload_div), false);
-    upload_div.classList.remove('inprogress');
-    upload_div.classList.add('uploaded');
+    upload_div.remove();
 
     if(progress_div) {
-        progress_div.addEventListener('transitionend', progress_div.remove.bind(progress_div), false);
-        progress_div.classList.add('uploaded');
+        progress_div.remove();
     }
 
     let uploaded_div = document.getElementById('uploaded_images');
@@ -443,6 +440,12 @@ function update_progress(file, e) {
     document.getElementById(`upload_${file.id}_progressbar`).style.width = `${100 * e.loaded / e.total}%`;
 }
 
+function mark_file_inprogress(file) {
+    // mark as in progress
+    document.getElementById(`upload_${file.id}`).classList.add('inprogress');
+    return file;
+}
+
 function upload_file(file) {
     if(file.media) {
         console.log('File already uploaded', file);
@@ -452,9 +455,6 @@ function upload_file(file) {
     if(file.is_duplicate) {
         return file;
     }
-
-    // mark as in progress
-    document.getElementById(`upload_${file.id}`).classList.add('inprogress');
 
     // create progress bar
     let progress_div = document.getElementById('currently_uploading');
@@ -497,6 +497,7 @@ function upload_file(file) {
 
 function uploadFile(file) {
     return get_file_sha1(file)
+    .then(mark_file_inprogress)
     .then(check_duplicate)
     .then(check_already_uploaded)
     .then(upload_file)
