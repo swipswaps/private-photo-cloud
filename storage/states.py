@@ -12,7 +12,7 @@ from django.core.files.uploadedfile import TemporaryUploadedFile, SimpleUploaded
 from django.utils import timezone
 
 from storage import helpers
-from storage.helpers import resolve_dict
+from storage.helpers import resolve_dict, get_first_filled_value
 from storage.tools import ffmpeg
 from storage.tools.binhash import get_sha1_hex
 from storage.tools.exiftool import get_exiftool_info, extract_any_embed_image
@@ -137,6 +137,8 @@ class MetadataMediaState(MediaState):
 
             media.needed_rotate_degree = cls.get_image_needed_rotate_degree(media.metadata)
 
+            media.camera = cls.get_image_camera(media.metadata) or ''
+
             try:
                 media.show_at = media.shot_at = cls.get_image_shoot_date(media.metadata)
             except ValueError as ex:
@@ -185,6 +187,16 @@ class MetadataMediaState(MediaState):
         logging.error(
             f'Unknown file extension for {media.mimetype!r} => fallback to user extension {user_file_extension}')
         yield user_file_extension
+
+    IMAGE_CAMERA_KEYS = (
+        'EXIF:Model',
+        'MakerNotes:CanonImageType',
+        'MakerNotes:CanonModelID',
+    )
+
+    @classmethod
+    def get_image_camera(cls, metadata):
+        return get_first_filled_value(metadata.get(k) for k in cls.IMAGE_CAMERA_KEYS)
 
     @classmethod
     def get_image_shoot_date(cls, metadata):

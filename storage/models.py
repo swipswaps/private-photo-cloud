@@ -135,6 +135,7 @@ class Media(MediaConstMixin, models.Model):
     metadata = JSONField(default=dict)
 
     shot_id = models.IntegerField(null=True, blank=True)
+    camera = models.CharField(max_length=255, blank=True)
 
     @classmethod
     def get_next_shot_id(cls):

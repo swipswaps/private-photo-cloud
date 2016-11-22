@@ -41,5 +41,5 @@ def process(session_id=None, media_id=None):
     Media.objects.filter(id__in=[m.id for m in shot_media]).update(shot_id=shot_id)
 
     # TODO: Consider other checks since they are more strict
-    # TODO: Add check for identical camera
+    # TODO: Add check for identical Media.camera
     # TODO: Add check for similar resolution (it is the case for Nikon: JPEG != RAW => 4608x3072 != 4672x3084)
