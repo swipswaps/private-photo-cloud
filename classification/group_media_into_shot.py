@@ -20,19 +20,25 @@ def process(session_id=None, media_id=None):
         logger.warning('Shot at without microsecond cannot be precise identifier: {.shot_at:%Y.%m.%d %H:%M%S.%f%Z}'.format(media))
 
     # Find all image that were shot exactly at that time
-    qs = Media.objects.filter(shot_at=media.shot_at).exclude(pk=media.id)
+    shot_media = list(Media.objects.filter(shot_at=media.shot_at))
 
-    if not qs.exists():
+    if len(shot_media) < 2:
+        # Somehow it was marked as having the same shot, but actually it is not
+        if media.shot_id:
+            media.shot_id = None
+            media.save(update_fields=['shot_id'])
         return
 
-    logger.info('Found other media for the same shot: {}'.format(qs.values('id', 'size_bytes', 'shot_at')))
+    logger.info(f'Found multiple media for the same shot: {len(shot_media)}')
 
-    # TODO: Implement grouping using the same shot_id
-    # TODO: Use postgresql sequences for this:
-    #   create sequence shots;
-    #   select nextval('shots'); # => 1
-    #   select nextval('shots'); # => 2
-    #   select nextval('shots'); # => 3
+    shot_id = [m.shot_id for m in shot_media if m.shot_id]
+
+    if shot_id:
+        shot_id = shot_id[0]
+    else:
+        shot_id = Media.get_next_shot_id()
+
+    Media.objects.filter(id__in=[m.id for m in shot_media]).update(shot_id=shot_id)
 
     # TODO: Consider other checks since they are more strict
     # TODO: Add check for identical camera

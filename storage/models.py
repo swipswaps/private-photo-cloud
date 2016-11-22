@@ -8,6 +8,7 @@ from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from django.db.models.signals import post_save
 
+from storage.tools.sequence import get_next_value
 from .const import ShotConstMixin, MediaConstMixin
 from .states import MediaState, InitialMediaState
 
@@ -60,6 +61,8 @@ class Media(MediaConstMixin, models.Model):
         (MEDIA_VIDEO, _('Video')),
         (MEDIA_OTHER, _('Other')),
     )
+
+    SHOT_SEQUENCE_NAME = 'media_shot'
 
     def generate_content_filename(instance, filename):
         if instance.show_at and instance.content_extension:
@@ -130,6 +133,12 @@ class Media(MediaConstMixin, models.Model):
     thumbnail_height = models.IntegerField(null=True, blank=True)
 
     metadata = JSONField(default=dict)
+
+    shot_id = models.IntegerField(null=True, blank=True)
+
+    @classmethod
+    def get_next_shot_id(cls):
+        return get_next_value(cls.SHOT_SEQUENCE_NAME)
 
     class Meta:
         unique_together = (
