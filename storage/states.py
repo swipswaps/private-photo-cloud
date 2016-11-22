@@ -172,11 +172,7 @@ class MetadataMediaState(MediaState):
 
         if content_path != media.content.path:
             logging.info(f'Move content file: {media.content.path} => {content_path}...')
-            dirname = os.path.dirname(content_path)
-
-            if not os.path.exists(dirname):
-                os.mkdir(dirname)
-
+            os.makedirs(os.path.dirname(content_path), exist_ok=True)
             os.rename(media.content.path, content_path)
             media.content.name = content_suffix
 
@@ -468,7 +464,6 @@ class ClassifyMediaState(MediaState):
     def process(cls, media):
         """Classify the media"""
         from upload.tasks import run_group_media_into_shot
-        # TODO: Actually do that in background
         run_group_media_into_shot(media_id=media.pk, session_id=media.session_id)
 
 
