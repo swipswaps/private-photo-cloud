@@ -21,6 +21,7 @@ SESSION_CACHE_ALIAS = "persistent"
 INSTALLED_APPS += [
     'storage',
     'upload',
+    'catalog',
 ]
 
 # Celery settings
