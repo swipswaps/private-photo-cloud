@@ -139,6 +139,9 @@ class MetadataMediaState(MediaState):
 
             media.camera = cls.get_image_camera(media.metadata) or ''
 
+            media.width = media.metadata.get("File:ImageWidth")
+            media.height = media.metadata.get("File:ImageHeight")
+
             try:
                 media.show_at = media.shot_at = cls.get_image_shoot_date(media.metadata)
             except ValueError as ex:
@@ -154,6 +157,9 @@ class MetadataMediaState(MediaState):
             media.needed_rotate_degree = 0
 
             media.duration = datetime.timedelta(seconds=float(video_stream['duration']))
+
+            media.width = video_stream["width"]
+            media.height = video_stream["height"]
 
             try:
                 media.show_at = media.shot_at = cls.get_video_shoot_date(media.metadata)
