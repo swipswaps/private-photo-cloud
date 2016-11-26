@@ -424,12 +424,12 @@ function check_already_uploaded(file) {
     });
 }
 
-function escape(s) {
+function escapeRegex(s) {
     return s.replace(/([.*+?\^${}()|\[\]\/\\])/g, '\\$1');
 }
 
 function getCookie(name) {
-    let match = document.cookie.match(new RegExp('(?:^|;\\s*)' + escape(name) + '=([^;]*)'));
+    let match = document.cookie.match(new RegExp('(?:^|;\\s*)' + escapeRegex(name) + '=([^;]*)'));
     return match ? match[1] : null;
 }
 
