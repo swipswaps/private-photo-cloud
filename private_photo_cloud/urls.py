@@ -24,7 +24,7 @@ urlpatterns = [
     url(r'^login/', login, name='login'),
     url(r'^logout/', logout, name='logout'),
     url(r'^admin/', admin.site.urls),
-    url(r'^upload/', include('upload.urls')),
+    url(r'^upload/', include('upload.urls', namespace='upload')),
 
     url(r'^', include('catalog.urls')),
 
