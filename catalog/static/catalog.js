@@ -40,15 +40,29 @@ function renderMonthMedia(medias) {
     }
 }
 
-function renderMedia(media) {
-    let div = document.createElement('div');
+// Fastest way according to https://jsperf.com/htmlencoderegex/35
+let DOMtext = document.createTextNode("html");
+let DOMnative = document.createElement("span");
+DOMnative.appendChild(DOMtext);
 
-    let img = document.createElement('img');
-    img.setAttribute('src', MEDIA_URL + media.thumbnail);
-    img.setAttribute('width', media.thumbnail_width);
-    img.setAttribute('height', media.thumbnail_height);
-    img.setAttribute('title', JSON.stringify(media));
-    div.appendChild(img);
+function escapeHTML(html) {
+    DOMtext.nodeValue = html;
+    // by default it does not escape " and '
+    return DOMnative.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+// end
+
+function renderMedia(media) {
+    let div = document.createElement('span');
+
+    div.innerHTML = `
+    <img src="${MEDIA_URL + media.thumbnail}"
+    width="${media.thumbnail_width}"
+    height="${media.thumbnail_height}"
+    title="${escapeHTML(JSON.stringify(media))}"
+    />
+    `;
 
     return div;
 }
