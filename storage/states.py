@@ -87,7 +87,9 @@ class MetadataMediaState(MediaState):
     RE_ORIENTATION = re.compile(r'^Rotate (?P<degree>\d+)(?P<counter> CW)?$')
 
     EXTENSION_BY_MIME = {
+        # value MUST start with ".", e.g. ".jpg"
         'image/x-canon-cr2': '.cr2',
+        'image/x-nikon-nef': '.nef',
         'image/jpeg': '.jpg',
     }
 
@@ -99,8 +101,9 @@ class MetadataMediaState(MediaState):
         'MakerNotes:AFImageWidth',
 
         # 'MakerNotes:SensorWidth',       # ~ +40px of real size
-        # "EXIF:ImageWidth",              # about 1/2 of real size
         # 'MakerNotes:CanonImageWidth',   # about 1/2 of real size
+
+        "EXIF:ImageWidth",              # for canon CR2 it gives 1/2, but right value for Nikon
     )
 
     IMAGE_HEIGHT_KEYS = (
@@ -109,16 +112,21 @@ class MetadataMediaState(MediaState):
         'EXIF:ExifImageHeight',
 
         'MakerNotes:AFImageHeight',
+        'EXIF:RowsPerStrip',
 
         # 'MakerNotes:SensorHeight',      # ~ +28px of real size
-        # 'EXIF:ImageHeight',             # about 1/2 of real size
         # 'MakerNotes:CanonImageHeight',  # about 1/2 of real size
+        'EXIF:ImageHeight',             # for canon CR2 it gives 1/2, but right value for Nikon
     )
 
     IMAGE_CAMERA_KEYS = (
         'EXIF:Model',
         'MakerNotes:CanonImageType',
         'MakerNotes:CanonModelID',
+    )
+
+    IMAGE_MIMETYPE_KEYS = (
+        'File:MIMEType',
     )
 
     IMAGE_SHOOT_KEYS = (
@@ -170,11 +178,6 @@ class MetadataMediaState(MediaState):
         # Set media_type
         media.media_type = cls.get_media_type_by_mimetype(media.mimetype)
 
-        media.content_extension = helpers.get_first_filled_value(cls.get_content_extension(media))
-
-        if media.content_extension != user_file_extension:
-            logging.info(f'Changed file extension: {user_file_extension!r} => {media.content_extension!r}')
-
         # Verify file size
         size_bytes = media.content.size
 
@@ -193,6 +196,13 @@ class MetadataMediaState(MediaState):
         if media.media_type == media.MEDIA_IMAGE:
             # Alternative: exiv2 (faster but less formats) http://dev.exiv2.org/projects/exiv2/wiki/How_does_Exiv2_compare_to_Exiftool
             media.metadata = get_exiftool_info(media.content.path)
+
+            mimetype = cls.get_from_metadata(media.metadata, cls.IMAGE_MIMETYPE_KEYS)
+
+            if media.mimetype != mimetype:
+                logger.info(f'Content type of {user_file_extension!r} is not recognized by'
+                            f' file (got {media.mimetype!r} instead of {mimetype!r})')
+                media.mimetype = mimetype
 
             media.needed_rotate_degree = cls.get_image_needed_rotate_degree(media.metadata)
 
@@ -235,6 +245,11 @@ class MetadataMediaState(MediaState):
 
         logger.info(f'Show at: {media.show_at!r}'
                     f', shot at: {"same" if media.shot_at == media.show_at else repr(media.shot_at)}')
+
+        media.content_extension = helpers.get_first_filled_value(cls.get_content_extension(media))
+
+        if media.content_extension != user_file_extension:
+            logging.info(f'Changed file extension: {user_file_extension!r} => {media.content_extension!r}')
 
         content_suffix = Media.generate_content_filename(media, None)
         content_path = os.path.join(settings.MEDIA_ROOT, content_suffix)
