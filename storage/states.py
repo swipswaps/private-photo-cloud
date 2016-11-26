@@ -131,7 +131,7 @@ class MetadataMediaState(MediaState):
         # It makes no sense to generate SHA1 for image content (i.e. without metadata) since metadata removal is usually
         # implies re-compression, so content changes.
 
-        if media.media_type == media.MEDIA_PHOTO:
+        if media.media_type == media.MEDIA_IMAGE:
             # Alternative: exiv2 (faster but less formats) http://dev.exiv2.org/projects/exiv2/wiki/How_does_Exiv2_compare_to_Exiftool
             media.metadata = get_exiftool_info(media.content.path)
 
@@ -298,7 +298,7 @@ class MetadataMediaState(MediaState):
         mime_type = mime_type.split('/')[0]
 
         if mime_type == 'image':
-            return Media.MEDIA_PHOTO
+            return Media.MEDIA_IMAGE
         elif mime_type == 'video':
             return Media.MEDIA_VIDEO
         return Media.MEDIA_OTHER
@@ -430,7 +430,7 @@ class ThumbnailMediaState(MediaState):
         """Extract thumbnail from image or video's screenshot"""
         logger.debug("extract thumbnail")
 
-        if media.media_type == media.MEDIA_PHOTO:
+        if media.media_type == media.MEDIA_IMAGE:
             source = media.content
         elif media.media_type == media.MEDIA_VIDEO:
             source = media.screenshot

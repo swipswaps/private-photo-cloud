@@ -2,11 +2,11 @@ from django.utils.translation import ugettext_lazy as _
 
 
 class ShotConstMixin:
-    MEDIA_PHOTO = 1
+    MEDIA_IMAGE = 1
     MEDIA_VIDEO = 2
     # MEDIA_AUDIO = 3
     MEDIA_TYPES = (
-        (MEDIA_PHOTO, _('Photo')),
+        (MEDIA_IMAGE, _('Photo')),
         (MEDIA_VIDEO, _('Video')),
         # (MEDIA_AUDIO, _('Audio')),
     )

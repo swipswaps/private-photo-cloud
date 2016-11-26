@@ -10,7 +10,7 @@ def process(session_id=None, media_id=None):
 
     media = Media.objects.get(pk=media_id)
 
-    if not media.shot_at or media.media_type != Media.MEDIA_PHOTO:
+    if not media.shot_at or media.media_type != Media.MEDIA_IMAGE:
         # Nothing to recognize here
         return
 

@@ -52,12 +52,12 @@ class Shot(ShotConstMixin, models.Model):
 
 
 class Media(MediaConstMixin, models.Model):
-    MEDIA_PHOTO = 1
+    MEDIA_IMAGE = 1
     MEDIA_VIDEO = 2
     MEDIA_OTHER = 3
 
     MEDIA_TYPES = (
-        (MEDIA_PHOTO, _('Photo')),
+        (MEDIA_IMAGE, _('Image')),
         (MEDIA_VIDEO, _('Video')),
         (MEDIA_OTHER, _('Other')),
     )
@@ -189,7 +189,7 @@ post_save.connect(Media.process, sender=Media)
 # TODO: Convert to model manager or proxy model
 
 class Photo(Media):
-    media_type = ShotConstMixin.MEDIA_PHOTO
+    media_type = ShotConstMixin.MEDIA_IMAGE
 
     # actual values
     duration_seconds = None
