@@ -39,8 +39,7 @@ function renderDayContainer(day) {
     let div = document.createElement('div');
     div.classList.add("day-container");
 
-    // TODO: Format date into human-readable format
-
+    // TODO: Format date into human-readable format: 1 Мая 2016, Понедельник
     div.innerHTML = `
         <div class="day-title">${day}</div>
     `;
@@ -108,6 +107,10 @@ function showMedia(e) {
     while(!$media.classList.contains('media')) {
         $media = $media.parentElement;
     }
+    // TODO: Show popup for supported content types
+    // TODO: Add navigation for viewing next / previous media
+    // TODO: Show metadata if requested
+
     location.href = MEDIA_URL + $media.dataset.content;
 }
 
@@ -116,13 +119,21 @@ function renderMedia(media) {
 
     if(media.media_type == 2) {
         // video
+        // TODO: Reduce size of the icon
         content = `<img src="${STATIC_URL}play.svg" class="play-video" />`;
     }
 
+    // TODO: Check show_at != shot_at => ask user to confirm the date
+    // TODO: Check is_image && orientation is null => ask user to rotate
+    // TODO: Check if no GPS => ask use to confirm location
+
+    // TODO: Generate human-readable metadata explanation
     let title = [];
     for(let k of Object.keys(media)) {
         title.push(`${k}: ${media[k]}`);
     }
+
+    // TODO: Have the same height for all the media, but cut it. Show cut areas on hover
 
     return renderElement(`
         <div class="media ${MEDIA_TYPES[media.media_type]}"

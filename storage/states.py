@@ -515,6 +515,8 @@ class ClassifyMediaState(MediaState):
         from upload.tasks import run_group_media_into_shot
         run_group_media_into_shot.delay(media_id=media.pk, session_id=media.session_id)
 
+        # TODO: Add more classification
+
 
 class OptimizeForWebMediaState(MediaState):
     STATE_CODE = 5
@@ -528,6 +530,7 @@ class OptimizeForWebMediaState(MediaState):
         """Optimize media for web, e.g. transcode video (multiple codecs) and pack images, find good screenshot"""
         # See http://superuser.com/questions/538112/meaningful-thumbnails-for-a-video-using-ffmpeg
         logger.debug("optimize")
+        # TODO: Implement optimization for web view
 
 
 class ReadyMediaState(MediaState):

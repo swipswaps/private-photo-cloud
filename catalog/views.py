@@ -34,6 +34,7 @@ MEDIA_FIELDS = (
     "width",
     "height",
     "content",
+    "mimetype",
 )
 
 
