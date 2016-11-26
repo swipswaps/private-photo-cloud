@@ -75,21 +75,80 @@ class InitialMediaState(MediaState):
 class MetadataMediaState(MediaState):
     STATE_CODE = 1
 
-    ORIENTATIONS_NO_DEGREE = {
-        'Horizontal (normal)': 0,
-    }
-    RE_ORIENTATION = re.compile(r'^Rotate (?P<degree>\d+)(?P<counter> CW)?$')
-
     @classmethod
     def get_next_state(cls, media):
         if media.media_type == media.MEDIA_VIDEO:
             return ScreenshotMediaState
         return ThumbnailMediaState
 
+    ORIENTATIONS_NO_DEGREE = {
+        'Horizontal (normal)': 0,
+    }
+    RE_ORIENTATION = re.compile(r'^Rotate (?P<degree>\d+)(?P<counter> CW)?$')
+
     EXTENSION_BY_MIME = {
         'image/x-canon-cr2': '.cr2',
         'image/jpeg': '.jpg',
     }
+
+    IMAGE_WIDTH_KEYS = (
+        "File:ImageWidth",
+        'PNG:ImageWidth',
+        "EXIF:ExifImageWidth",
+
+        'MakerNotes:AFImageWidth',
+
+        # 'MakerNotes:SensorWidth',       # ~ +40px of real size
+        # "EXIF:ImageWidth",              # about 1/2 of real size
+        # 'MakerNotes:CanonImageWidth',   # about 1/2 of real size
+    )
+
+    IMAGE_HEIGHT_KEYS = (
+        'File:ImageHeight',
+        'PNG:ImageHeight',
+        'EXIF:ExifImageHeight',
+
+        'MakerNotes:AFImageHeight',
+
+        # 'MakerNotes:SensorHeight',      # ~ +28px of real size
+        # 'EXIF:ImageHeight',             # about 1/2 of real size
+        # 'MakerNotes:CanonImageHeight',  # about 1/2 of real size
+    )
+
+    IMAGE_CAMERA_KEYS = (
+        'EXIF:Model',
+        'MakerNotes:CanonImageType',
+        'MakerNotes:CanonModelID',
+    )
+
+    IMAGE_SHOOT_KEYS = (
+        # More precise should come first
+        "Composite:SubSecCreateDate",
+        "Composite:SubSecDateTimeOriginal",
+        "Composite:SubSecModifyDate",
+        "XMP:DateCreated",
+        "EXIF:CreateDate",
+        "EXIF:DateTimeOriginal",
+        "EXIF:ModifyDate",
+        "EXIF:GPSDateStamp",
+    )
+
+    SHOOT_DATE_FORMATS = (
+        '%Y:%m:%d %H:%M:%S',  # 2016:10:19 21:08:00
+        '%Y:%m:%d %H:%M:%S.%f',  # 2016:11:06 14:29:25.018
+        '%Y-%m-%dT%H:%M:%S%z',  # 2016-10-22T14:39:13+0200
+    )
+
+    VIDEO_SHOOT_KEYS = (
+        'format:tags:com.apple.quicktime.creationdate',
+        'format:tags:creation_time',
+        'stream:{codec_type}:tags.creation_time',
+    )
+
+    IMAGE_ORIENTATION_KEYS = (
+        'EXIF:Orientation',
+        'MakerNotes:CameraOrientation',
+    )
 
     @classmethod
     def process(cls, media):
@@ -137,10 +196,11 @@ class MetadataMediaState(MediaState):
 
             media.needed_rotate_degree = cls.get_image_needed_rotate_degree(media.metadata)
 
-            media.camera = cls.get_image_camera(media.metadata) or ''
+            media.camera = cls.get_from_metadata(media.metadata, cls.IMAGE_CAMERA_KEYS) or ''
+            media.width = cls.get_from_metadata(media.metadata, cls.IMAGE_WIDTH_KEYS)
+            media.height = cls.get_from_metadata(media.metadata, cls.IMAGE_HEIGHT_KEYS)
 
-            media.width = media.metadata.get("File:ImageWidth")
-            media.height = media.metadata.get("File:ImageHeight")
+            assert media.width and media.height
 
             try:
                 media.show_at = media.shot_at = cls.get_image_shoot_date(media.metadata)
@@ -161,16 +221,17 @@ class MetadataMediaState(MediaState):
             media.width = video_stream["width"]
             media.height = video_stream["height"]
 
+            assert media.width and media.height
+
             try:
                 media.show_at = media.shot_at = cls.get_video_shoot_date(media.metadata)
             except ValueError as ex:
                 logger.warning(f'{ex.args[0]} from data: {json.dumps(ex.args[1], indent=4)}')
                 media.show_at = media.source_lastmodified
-
         else:
             # No rotation is needed, do not prompt user for it
             media.needed_rotate_degree = 0
-            # TODO: Put flag and some fake value for shot_at
+            media.show_at = media.source_lastmodified
 
         logger.info(f'Show at: {media.show_at!r}'
                     f', shot at: {"same" if media.shot_at == media.show_at else repr(media.shot_at)}')
@@ -194,43 +255,22 @@ class MetadataMediaState(MediaState):
             f'Unknown file extension for {media.mimetype!r} => fallback to user extension {user_file_extension}')
         yield user_file_extension
 
-    IMAGE_CAMERA_KEYS = (
-        'EXIF:Model',
-        'MakerNotes:CanonImageType',
-        'MakerNotes:CanonModelID',
-    )
+    @classmethod
+    def get_from_metadata(cls, metadata, keys):
+        return get_first_filled_value(metadata.get(k) for k in keys)
 
     @classmethod
-    def get_image_camera(cls, metadata):
-        return get_first_filled_value(metadata.get(k) for k in cls.IMAGE_CAMERA_KEYS)
+    def get_all_from_metadata(cls, metadata, keys):
+        return [(k, metadata.get(k)) for k in keys]
 
     @classmethod
     def get_image_shoot_date(cls, metadata):
-        shoot_dates = [(k, v) for k, v in cls.get_image_shoot_date_options(metadata) if v]
+        shot_date = cls.get_from_metadata(metadata, cls.IMAGE_SHOOT_KEYS)
 
-        logger.debug(f'image shoot dates: {shoot_dates}')
-
-        for k, v in shoot_dates:
-            return cls.parse_shot_at(v)
+        if shot_date:
+            return cls.parse_shot_at(shot_date)
 
         raise ValueError('Failed to extract image shoot date', dict(metadata))
-
-    IMAGE_SHOOT_KEYS = (
-        # More precise should come first
-        "Composite:SubSecCreateDate",
-        "Composite:SubSecDateTimeOriginal",
-        "Composite:SubSecModifyDate",
-        "XMP:DateCreated",
-        "EXIF:CreateDate",
-        "EXIF:DateTimeOriginal",
-        "EXIF:ModifyDate",
-        "EXIF:GPSDateStamp",
-    )
-
-    @classmethod
-    def get_image_shoot_date_options(cls, metadata):
-        for k in cls.IMAGE_SHOOT_KEYS:
-            yield k, metadata.get(k)
 
     @classmethod
     def get_video_shoot_date(cls, metadata):
@@ -242,12 +282,6 @@ class MetadataMediaState(MediaState):
             return cls.parse_shot_at(v)
 
         raise ValueError('Failed to extract video shoot date', dict(metadata))
-
-    SHOOT_DATE_FORMATS = (
-        '%Y:%m:%d %H:%M:%S',  # 2016:10:19 21:08:00
-        '%Y:%m:%d %H:%M:%S.%f',  # 2016:11:06 14:29:25.018
-        '%Y-%m-%dT%H:%M:%S%z',  # 2016-10-22T14:39:13+0200
-    )
 
     @classmethod
     def parse_shot_at(cls, value):
@@ -276,12 +310,6 @@ class MetadataMediaState(MediaState):
 
         raise NotImplementedError(value)
 
-    VIDEO_SHOOT_KEYS = (
-        'format:tags:com.apple.quicktime.creationdate',
-        'format:tags:creation_time',
-        'stream:{codec_type}:tags.creation_time',
-    )
-
     @classmethod
     def get_video_shoot_date_options(cls, metadata):
         for k in cls.VIDEO_SHOOT_KEYS:
@@ -303,6 +331,7 @@ class MetadataMediaState(MediaState):
             return Media.MEDIA_VIDEO
         return Media.MEDIA_OTHER
 
+
     @classmethod
     def get_image_needed_rotate_degree(cls, metadata):
         """
@@ -317,37 +346,24 @@ class MetadataMediaState(MediaState):
         We use exiftool that is a standart in extracting metadata from images.
         """
 
-        orientation = [(k, v)
-                       for k, v in metadata.items()
-                       if 'orientation' in k.lower()]
+        orientation = cls.get_from_metadata(metadata, cls.IMAGE_ORIENTATION_KEYS)
 
         if not orientation:
             # Was not found
             return None
 
-        orientation_values = set(v for k, v in orientation)
-
-        if len(orientation) > 1 and len(orientation_values) == 1:
-            logger.info(f'Multiple orientations found: {orientation}')
-        elif len(orientation) > 1:
-            raise NotImplementedError(f'Multiple orientations found: {orientation}')
-        else:
-            logger.info(f'Use orientation: {orientation[0]}')
-
-        orientation = orientation[0]
-
         try:
             # First check exact match
-            return cls.ORIENTATIONS_NO_DEGREE[orientation[1]]
+            return cls.ORIENTATIONS_NO_DEGREE[orientation]
         except KeyError:
             pass
 
         # Try to parse orientation
-        m = cls.RE_ORIENTATION.search(orientation[1])
+        m = cls.RE_ORIENTATION.search(orientation)
 
         if not m:
             # Failed to parse
-            raise NotImplementedError(f'Unsupported orientation: {orientation[1]}')
+            raise NotImplementedError(f'Unsupported orientation: {orientation}')
 
         degree = int(m.group('degree'), 10)
 
