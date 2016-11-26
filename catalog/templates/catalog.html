@@ -6,7 +6,8 @@
 	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}catalog.css" />
 	<script src="{{ STATIC_URL }}catalog.js"></script>
 	<script>
-		let MEDIA_URL = '{{ MEDIA_URL|escapejs }}';
+		const MEDIA_URL = '{{ MEDIA_URL|escapejs }}';
+		const STATIC_URL = '{{ STATIC_URL|escapejs }}';
 	</script>
 </head>
 <body>

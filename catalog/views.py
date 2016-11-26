@@ -33,6 +33,7 @@ MEDIA_FIELDS = (
     "size_bytes",
     "width",
     "height",
+    "content",
 )
 
 

@@ -1,5 +1,7 @@
 'use strict';
 
+let HIDPI_SCALE = 2;
+
 
 function initCatalog() {
     fetch('/images/months.json', {
@@ -33,11 +35,46 @@ function loadMonth(month) {
     }).then(renderMonthMedia);
 }
 
+function renderDayContainer(day) {
+    let div = document.createElement('div');
+    div.classList.add("day-container");
+
+    // TODO: Format date into human-readable format
+
+    div.innerHTML = `
+        <div class="day-title">${day}</div>
+    `;
+
+    return div;
+}
+
+const MEDIA_TYPES = [null, 'media_image', 'media_video', 'media_other'];
+
 function renderMonthMedia(medias) {
     let container = document.getElementById('media');
-    for(let media of medias.media) {
-        container.appendChild(renderMedia(media));
+    // erase content
+    container.innerHTML = '';
+
+    if(!medias.media.length) {
+        return;
     }
+
+    let prev_day = null;
+    let day_container = null;
+    for(let media of medias.media) {
+        let day = media.show_at.substring(0, 10);    // cut 2016-01-01
+
+        if(day != prev_day) {
+            if(day_container) {
+                container.append(day_container);
+            }
+            day_container = renderDayContainer(day);
+            prev_day = day;
+        }
+
+        day_container.appendChild(renderMedia(media));
+    }
+    container.append(day_container);
 }
 
 // Fastest way according to https://jsperf.com/htmlencoderegex/35
@@ -53,18 +90,48 @@ function escapeHTML(html) {
 
 // end
 
+const render_container = document.createElement('div');
+
+function renderElement(html) {
+    render_container.innerHTML = html;
+    return render_container.children[0];
+}
+
+function renderElements(html) {
+    render_container.innerHTML = html;
+    return render_container.children;
+}
+
+function showMedia(e) {
+    let $media = e.target;
+    // we could have clicked on child element, so go till the "media" element
+    while(!$media.classList.contains('media')) {
+        $media = $media.parentElement;
+    }
+    location.href = MEDIA_URL + $media.dataset.content;
+}
+
 function renderMedia(media) {
-    let div = document.createElement('span');
+    let content = '';
 
-    div.innerHTML = `
-    <img src="${MEDIA_URL + media.thumbnail}"
-    width="${media.thumbnail_width}"
-    height="${media.thumbnail_height}"
-    title="${escapeHTML(JSON.stringify(media))}"
-    />
-    `;
+    if(media.media_type == 2) {
+        // video
+        content = `<img src="${STATIC_URL}play.svg" class="play-video" />`;
+    }
 
-    return div;
+    let title = [];
+    for(let k of Object.keys(media)) {
+        title.push(`${k}: ${media[k]}`);
+    }
+
+    return renderElement(`
+        <div class="media ${MEDIA_TYPES[media.media_type]}"
+        style="background-image: url(${MEDIA_URL + media.thumbnail}); width: ${media.thumbnail_width / HIDPI_SCALE}px; height: ${media.thumbnail_height / HIDPI_SCALE}px;"
+        title="${escapeHTML(title.join("\n"))}"
+        data-content="${media.content}"
+        onclick="showMedia(event)"
+        >${content}</div>
+    `);
 }
 
 window.addEventListener("DOMContentLoaded", initCatalog, true);

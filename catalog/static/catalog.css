@@ -1,0 +1,38 @@
+.day-container {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.day-title {
+    display: block;
+    position: sticky;
+    top: 0;
+    page-break-after: always;
+    background-color: white;
+    padding: 0.5em;
+    margin: 0 -0.5em;
+    font-family: Arial;
+    z-index: 1; /* above play-video button */
+}
+
+.media {
+    display: inline-flex;
+    margin: 1px;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+.media_video {
+    border-top: dashed 2px black;
+    border-bottom: dashed 2px black;
+}
+
+.media > img.play-video {
+    opacity: 0.5;
+}
+
+.media:hover > img.play-video {
+    opacity: 1;
+}
