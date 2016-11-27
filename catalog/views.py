@@ -34,7 +34,9 @@ MEDIA_FIELDS = (
     "width",
     "height",
     "content",
+    "screenshot",
     "mimetype",
+    "source_filename",
 )
 
 

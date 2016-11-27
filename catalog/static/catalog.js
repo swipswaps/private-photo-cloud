@@ -1,6 +1,8 @@
 'use strict';
 
-let HIDPI_SCALE = 2;
+const HIDPI_SCALE = 2;
+const MEDIA_IMAGE = 1;
+const MEDIA_VIDEO = 2;
 
 
 function initCatalog() {
@@ -101,23 +103,63 @@ function renderElements(html) {
     return render_container.children;
 }
 
-function showMedia(e) {
-    let $media = e.target;
-    // we could have clicked on child element, so go till the "media" element
-    while(!$media.classList.contains('media')) {
-        $media = $media.parentElement;
+function getTargetByClass(e, classname) {
+    // event might caught by child -> iterate ascenting till get element with needed class
+    let $element = e.target;
+    while(!$element.classList.contains(classname)) {
+        $element = $element.parentElement;
     }
+    return $element;
+}
+
+function showMedia(e) {
+    let $media = getTargetByClass(e, 'media');
+
     // TODO: Show popup for supported content types
     // TODO: Add navigation for viewing next / previous media
     // TODO: Show metadata if requested
 
-    location.href = MEDIA_URL + $media.dataset.content;
+    let media = $media.dataset;
+
+    let inner = '';
+
+    if(media.media_type == MEDIA_IMAGE) {
+        inner = `<img src="${MEDIA_URL + media.content}" />`;
+    } else if(media.media_type == MEDIA_VIDEO) {
+        inner = `
+        <video src="${MEDIA_URL + media.content}"
+        controls="true"
+        autoplay="true"
+        poster="${MEDIA_URL + media.screenshot}"
+        />`;
+    } else {
+        // MEDIA_OTHER
+        inner = `<a href="${MEDIA_URL + media.content}">Download ${escapeHTML(media.source_filename)}</a>`;
+    }
+
+    for(let $popup of document.querySelectorAll('.popup-media')) {
+        $popup.remove();
+    }
+
+    let div = renderElement(`
+        <div class="popup-media" onclick="closeMediaShow(event)">
+        ${inner}
+        </div>
+    `);
+    document.documentElement.classList.add('noscrolling');
+    document.documentElement.appendChild(div);
+}
+
+function closeMediaShow(e) {
+    document.documentElement.classList.remove('noscrolling');
+    let $div = getTargetByClass(e, 'popup-media');
+    $div.remove();
 }
 
 function renderMedia(media) {
     let content = '';
 
-    if(media.media_type == 2) {
+    if(media.media_type == MEDIA_VIDEO) {
         // video
         // TODO: Reduce size of the icon
         content = `<img src="${STATIC_URL}play.svg" class="play-video" />`;
@@ -140,6 +182,8 @@ function renderMedia(media) {
         style="background-image: url(${MEDIA_URL + media.thumbnail}); width: ${media.thumbnail_width / HIDPI_SCALE}px; height: ${media.thumbnail_height / HIDPI_SCALE}px;"
         title="${escapeHTML(title.join("\n"))}"
         data-content="${media.content}"
+        data-media_type="${media.media_type}"
+        data-screenshot="${media.screenshot}"
         onclick="showMedia(event)"
         >${content}</div>
     `);
