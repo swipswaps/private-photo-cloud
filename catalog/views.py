@@ -36,6 +36,7 @@ MEDIA_FIELDS = (
     "content",
     "screenshot",
     "mimetype",
+    "shot_id",
     "source_filename",
 )
 
