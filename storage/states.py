@@ -517,6 +517,11 @@ class ClassifyMediaState(MediaState):
 
         # TODO: Add more classification
 
+        # TODO: Group SDR + HDR
+        # TODO: Group bursts
+        # TODO: Mark media with tags, e.g. "RAW", "Orig", "HDR", "Modified"
+
+
 
 class OptimizeForWebMediaState(MediaState):
     STATE_CODE = 5
@@ -530,7 +535,8 @@ class OptimizeForWebMediaState(MediaState):
         """Optimize media for web, e.g. transcode video (multiple codecs) and pack images, find good screenshot"""
         # See http://superuser.com/questions/538112/meaningful-thumbnails-for-a-video-using-ffmpeg
         logger.debug("optimize")
-        # TODO: Implement optimization for web view
+        # TODO: Implement generating content, optimized for viewing in browser, e.g. max 2880 x 1800, jpeg / mp4
+        # TODO: Consider generating "original rotated" media, identical with quality but ready for usage
 
 
 class ReadyMediaState(MediaState):

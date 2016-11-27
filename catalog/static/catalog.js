@@ -130,6 +130,8 @@ function showMedia($media) {
     // TODO: Show "optimized" version instead of "raw" material
     // TODO: Show metadata if requested
 
+    // TODO: Indicate information about media from the same shot / burst
+
     if(media.media_type == MEDIA_IMAGE) {
         inner = `<img src="${MEDIA_URL + media.content}" />`;
     } else if(media.media_type == MEDIA_VIDEO) {
@@ -246,7 +248,9 @@ function renderMedia(media) {
         title.push(`${k}: ${media[k]}`);
     }
 
+    // TODO: Indicate presence of other media in the same shot / burst
     // TODO: Have the same height for all the media, but cut it. Show cut areas on hover
+    // TODO: Show an overlay to rotate the media
 
     return renderElement(`
         <div id="media-${media.id}"

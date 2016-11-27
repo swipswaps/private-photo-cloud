@@ -137,6 +137,8 @@ class Media(MediaConstMixin, models.Model):
     shot_id = models.IntegerField(null=True, blank=True)
     camera = models.CharField(max_length=255, blank=True)
 
+    # TODO: Add field to store view-optimized content
+
     @classmethod
     def get_next_shot_id(cls):
         return get_next_value(cls.SHOT_SEQUENCE_NAME)
