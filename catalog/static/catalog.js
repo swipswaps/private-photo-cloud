@@ -22,6 +22,7 @@ function renderMonths(dates) {
 
 function renderMonth(month) {
     let div = document.createElement('div');
+    div.classList.add('show-month');
     div.innerText = month;
     div.addEventListener('click', function(e) {
         loadMonth(month);
@@ -38,18 +39,16 @@ function loadMonth(month) {
 }
 
 function renderDayContainer(day) {
-    let div = document.createElement('div');
-    div.classList.add("day-container");
-
     // TODO: Format date into human-readable format: 1 Мая 2016, Понедельник
-    div.innerHTML = `
-        <div class="day-title">${day}</div>
-    `;
-
-    return div;
+    return renderElement(`
+        <div class="dat-container">
+            <div class="day-title">${day}</div>
+        </div>
+    `);
 }
 
 const MEDIA_TYPES = [null, 'media_image', 'media_video', 'media_other'];
+
 
 function renderMonthMedia(medias) {
     let container = document.getElementById('media');
@@ -61,13 +60,14 @@ function renderMonthMedia(medias) {
     }
 
     let prev_day = null;
+    let day = null;
     let day_container = null;
     for(let media of medias.media) {
-        let day = media.show_at.substring(0, 10);    // cut 2016-01-01
+        day = media.show_at.substring(0, 10);    // cut 2016-01-01
 
         if(day != prev_day) {
             if(day_container) {
-                container.append(day_container);
+                container.appendChild(day_container);
             }
             day_container = renderDayContainer(day);
             prev_day = day;
@@ -75,6 +75,7 @@ function renderMonthMedia(medias) {
 
         day_container.appendChild(renderMedia(media));
     }
+
     container.append(day_container);
 }
 
@@ -112,16 +113,18 @@ function getTargetByClass(e, classname) {
     return $element;
 }
 
-function showMedia(e) {
-    let $media = getTargetByClass(e, 'media');
+function onShowMedia(e) {
+    showMedia(getTargetByClass(e, 'media'));
+}
 
-    // TODO: Show popup for supported content types
-    // TODO: Add navigation for viewing next / previous media
-    // TODO: Show metadata if requested
-
+function showMedia($media) {
     let media = $media.dataset;
 
     let inner = '';
+
+    // TODO: Do not show image for not supported types
+    // TODO: Show "optimized" version instead of "raw" material
+    // TODO: Show metadata if requested
 
     if(media.media_type == MEDIA_IMAGE) {
         inner = `<img src="${MEDIA_URL + media.content}" />`;
@@ -131,7 +134,7 @@ function showMedia(e) {
         controls="true"
         autoplay="true"
         poster="${MEDIA_URL + media.screenshot}"
-        />`;
+        ></video>`;
     } else {
         // MEDIA_OTHER
         inner = `<a href="${MEDIA_URL + media.content}">Download ${escapeHTML(media.source_filename)}</a>`;
@@ -141,20 +144,61 @@ function showMedia(e) {
         $popup.remove();
     }
 
+    // later elements overlay previous
     let div = renderElement(`
-        <div class="popup-media" onclick="closeMediaShow(event)">
-        ${inner}
+        <div class="popup-media" data-media_id="${media.id}">
+            ${inner}
+            <div class="popup-media-controls popup-media-prev" onclick="prevMediaShow(event)">&lArr;</div>
+            <div class="popup-media-controls popup-media-next" onclick="nextMediaShow(event)">&rArr;</div>
+            <div class="popup-media-controls popup-media-close" onclick="onCloseMediaShow(event)">&times;</div>
         </div>
     `);
     document.documentElement.classList.add('noscrolling');
     document.documentElement.appendChild(div);
 }
 
-function closeMediaShow(e) {
+function closeMediaShow($div) {
     document.documentElement.classList.remove('noscrolling');
-    let $div = getTargetByClass(e, 'popup-media');
     $div.remove();
 }
+
+function onCloseMediaShow(e) {
+    closeMediaShow(getTargetByClass(e, 'popup-media'));
+}
+
+function prevMediaShow(e) {
+    let $div = getTargetByClass(e, 'popup-media');
+
+    let media_id = $div.dataset.media_id;
+    let $media = document.getElementById(`media-${media_id}`);
+
+    let $prev = $media.previousElementSibling;
+    if(!$prev || !$prev.classList.contains('media')) {
+        // TODO: Implement traversal
+        console.log('Did not found previous for', $media, '=>', $prev);
+        return closeMediaShow($div);
+    }
+
+    showMedia($prev);
+}
+
+
+function nextMediaShow(e) {
+    let $div = getTargetByClass(e, 'popup-media');
+
+    let media_id = $div.dataset.media_id;
+    let $media = document.getElementById(`media-${media_id}`);
+
+    let $next = $media.nextElementSibling;
+    if(!$next || !$next.classList.contains('media')) {
+        // TODO: Implement traversal
+        console.log('Did not found next for', $media, '=>', $next);
+        return closeMediaShow($div);
+    }
+
+    showMedia($next);
+}
+
 
 function renderMedia(media) {
     let content = '';
@@ -178,13 +222,15 @@ function renderMedia(media) {
     // TODO: Have the same height for all the media, but cut it. Show cut areas on hover
 
     return renderElement(`
-        <div class="media ${MEDIA_TYPES[media.media_type]}"
+        <div id="media-${media.id}"
+        class="media ${MEDIA_TYPES[media.media_type]}"
         style="background-image: url(${MEDIA_URL + media.thumbnail}); width: ${media.thumbnail_width / HIDPI_SCALE}px; height: ${media.thumbnail_height / HIDPI_SCALE}px;"
         title="${escapeHTML(title.join("\n"))}"
+        data-id="${media.id}"
         data-content="${media.content}"
         data-media_type="${media.media_type}"
         data-screenshot="${media.screenshot}"
-        onclick="showMedia(event)"
+        onclick="onShowMedia(event)"
         >${content}</div>
     `);
 }
