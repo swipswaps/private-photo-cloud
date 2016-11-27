@@ -43,6 +43,8 @@ def upload_file(request):
         **pk
     )
 
+    # TODO: Make this save as dummy as possible -- return only ID and do all processing in background
+
     try:
         media.save()
     except MediaState.InvalidUploadError as ex:
