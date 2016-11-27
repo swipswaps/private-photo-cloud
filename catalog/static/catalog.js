@@ -41,7 +41,7 @@ function loadMonth(month) {
 function renderDayContainer(day) {
     // TODO: Format date into human-readable format: 1 Мая 2016, Понедельник
     return renderElement(`
-        <div class="dat-container">
+        <div class="date-container">
             <div class="day-title">${day}</div>
         </div>
     `);
@@ -118,6 +118,10 @@ function onShowMedia(e) {
 }
 
 function showMedia($media) {
+    if(!$media) {
+        return;
+    }
+
     let media = $media.dataset;
 
     let inner = '';
@@ -141,6 +145,7 @@ function showMedia($media) {
     }
 
     for(let $popup of document.querySelectorAll('.popup-media')) {
+        // TODO: Stop and delete video tags
         $popup.remove();
     }
 
@@ -148,8 +153,8 @@ function showMedia($media) {
     let div = renderElement(`
         <div class="popup-media" data-media_id="${media.id}">
             ${inner}
-            <div class="popup-media-controls popup-media-prev" onclick="prevMediaShow(event)">&lArr;</div>
-            <div class="popup-media-controls popup-media-next" onclick="nextMediaShow(event)">&rArr;</div>
+            <div class="popup-media-controls popup-media-prev" onclick="showPrevMedia(event)">&lArr;</div>
+            <div class="popup-media-controls popup-media-next" onclick="showNextMedia(event)">&rArr;</div>
             <div class="popup-media-controls popup-media-close" onclick="onCloseMediaShow(event)">&times;</div>
         </div>
     `);
@@ -163,40 +168,62 @@ function closeMediaShow($div) {
 }
 
 function onCloseMediaShow(e) {
+    e.preventDefault();
     closeMediaShow(getTargetByClass(e, 'popup-media'));
 }
 
-function prevMediaShow(e) {
+
+function showPrevMedia(e) {
+    e.preventDefault();
     let $div = getTargetByClass(e, 'popup-media');
-
-    let media_id = $div.dataset.media_id;
-    let $media = document.getElementById(`media-${media_id}`);
-
-    let $prev = $media.previousElementSibling;
-    if(!$prev || !$prev.classList.contains('media')) {
-        // TODO: Implement traversal
-        console.log('Did not found previous for', $media, '=>', $prev);
-        return closeMediaShow($div);
-    }
-
-    showMedia($prev);
+    let $media = document.getElementById(`media-${$div.dataset.media_id}`);
+    showMedia(getPrevMedia($media));
 }
 
 
-function nextMediaShow(e) {
+function showNextMedia(e) {
+    e.preventDefault();
     let $div = getTargetByClass(e, 'popup-media');
+    let $media = document.getElementById(`media-${$div.dataset.media_id}`);
+    showMedia(getNextMedia($media));
+}
 
-    let media_id = $div.dataset.media_id;
-    let $media = document.getElementById(`media-${media_id}`);
 
-    let $next = $media.nextElementSibling;
-    if(!$next || !$next.classList.contains('media')) {
-        // TODO: Implement traversal
-        console.log('Did not found next for', $media, '=>', $next);
-        return closeMediaShow($div);
+function getPrevMedia($media) {
+    let $prev = $media.previousElementSibling;
+    if($prev && $prev.classList.contains('media')) {
+        return $prev;
     }
 
-    showMedia($next);
+    // TODO: Check performance and maybe implement recursive algorithm
+
+    let $elements = document.querySelectorAll('.media');
+
+    for(let i=0;i<$elements.length;i++) {
+        if($elements[i].id == $media.id) {
+            return i > 0 ? $elements[i-1] : null;
+        }
+    }
+    return null;
+}
+
+
+function getNextMedia($media) {
+    let $next = $media.nextElementSibling;
+    if($next && $next.classList.contains('media')) {
+        return $next;
+    }
+
+    // TODO: Check performance and maybe implement recursive algorithm
+
+    let $elements = document.querySelectorAll('.media');
+
+    for(let i=0;i<$elements.length;i++) {
+        if($elements[i].id == $media.id) {
+            return (i + 1 < $elements.length) ? $elements[i+1] : null;
+        }
+    }
+    return null;
 }
 
 
