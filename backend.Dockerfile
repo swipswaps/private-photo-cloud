@@ -1,4 +1,4 @@
-FROM python:3.6.0b3-alpine
+FROM python:3.6.0b4-alpine
 
 RUN apk --no-cache upgrade\
  && PKG="gcc musl-dev"\
@@ -12,7 +12,6 @@ COPY requirements /tmp/requirements
 RUN apk --no-cache upgrade\
  && PKG="gcc musl-dev postgresql-dev jpeg-dev openjpeg-dev zlib-dev tiff-dev freetype-dev lcms2-dev libwebp-dev"\
  && apk add --no-cache postgresql libmagic exiftool jpeg openjpeg zlib tiff freetype lcms2 libwebp ffmpeg $PKG\
-# --no-dependencies
  && python -m pip install --no-cache-dir -r /tmp/requirements\
  && apk del $PKG
 
