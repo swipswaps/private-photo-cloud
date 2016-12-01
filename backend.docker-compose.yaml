@@ -53,7 +53,7 @@ services:
         done;
         ./manage.py migrate;
         ./manage.py shell -c 'from django.contrib.auth.models import User; u, _ = User.objects.get_or_create(username="admin", is_superuser=True, is_staff=True, is_active=True);u.set_password("password");u.save();';
-        ./manage.py runserver 0.0.0.0:80;
+        exec ./manage.py runserver 0.0.0.0:80
   worker:
     <<: *BACKEND
     ports: []
