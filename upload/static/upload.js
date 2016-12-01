@@ -8,12 +8,14 @@ let counter = 1;
 let UPLOAD_WORKERS_NUM = 0;
 let UPLOAD_WORKERS_NUM_MAX = 3;
 let last_dragenter_target = null;
+let UPLOAD_DIV;
 
 function initUpload() {
     document.documentElement.addEventListener("dragenter", dragenter, false);
     document.documentElement.addEventListener("dragleave", dragleave, false);
     document.documentElement.addEventListener("dragover", dragover, false);
     document.documentElement.addEventListener("drop", drop, false);
+    UPLOAD_DIV = document.getElementById('images_to_upload');
 }
 
 /* Drag-n-Drop
@@ -61,11 +63,33 @@ function drop(e) {
     e.preventDefault();
     e.stopPropagation();
     disableDrop(e);
-    // unfortunatelly we cannot recognize directories and read their content
-    // see https://bugzilla.mozilla.org/show_bug.cgi?id=876480
-    // in future we might do: http://www.rajeshsegu.com/2012/08/html5-drag-and-drop-a-folder/
-    // E.g.: dt.items[0].getAsEntry().isFile / isDirectory
-    uploadFiles(e.dataTransfer.files);
+
+    if(checkDirectoryReader(e.dataTransfer)) {
+        // browser supports .webkitGetAsEntry
+        let entries = [];
+        for(let item of e.dataTransfer.items) {
+            entries.push(item.webkitGetAsEntry());
+        }
+        console.log(e.dataTransfer.files);
+        uploadEntries(entries);
+    } else {
+        // HTML5-standard approach, does not support reading directories
+        uploadFiles(e.dataTransfer.files);
+    }
+}
+
+function checkDirectoryReader(dataTransfer) {
+    return (dataTransfer.items && dataTransfer.items.length && dataTransfer.items[0].webkitGetAsEntry);
+}
+
+function uploadEntries(entries) {
+    for(let entry of entries) {
+        if(entry.isDirectory) {
+            entry.createReader().readEntries(uploadEntries);
+        } else {
+            entry.file(uploadFile);
+        }
+    }
 }
 
 function enableDrop(e) {
@@ -183,6 +207,7 @@ function renderUploadItem(file_obj) {
     let div = document.createElement('div');
     div.setAttribute('id', `upload_${file_obj.id}`);
     div.classList.add('upload_file', CLASS_BY_TYPE[file_obj.type_group], CLASS_BY_GROUP[file_obj.size_group]);
+    div.dataset.size_group = file_obj.size_group;
     div.setAttribute('title', [
         file_obj.file.name,
         bytes2text(file_obj.file.size),
@@ -226,35 +251,47 @@ function compareFiles(a, b) {
     return 1;
 }
 
+function compareUploadNodes(a, b) {
+    return (parseInt(a.dataset.size_group) - parseInt(b.dataset.size_group));
+}
+
+function sortUploadNodes() {
+    // TODO: Sort not more often than every N seconds
+    let elements = Array.from(UPLOAD_DIV.children);
+    elements.sort(compareUploadNodes);
+    for(let element of elements) {
+        UPLOAD_DIV.appendChild(element);
+    }
+}
+
+function uploadFile(file, batch) {
+    let file_obj = {
+        file: file,
+        id: counter++,
+        size_group: getSizeGroup(file.size),
+        type_group: getTypeGroup(file.type)
+    };
+
+    // TODO: Append not to the end of container, but at the end of items of this type
+    UPLOAD_DIV.appendChild(renderUploadItem(file_obj));
+
+    files2upload_size += file.size;
+    files2upload.push(file_obj);
+
+    if(!batch) {
+        files2upload.sort(compareFiles);
+        sortUploadNodes();
+        processUploadQueue();
+    }
+}
+
 function uploadFiles(files) {
-    let upload_div = document.getElementById('images_to_upload');
-
-    upload_div.classList.remove('hidden');
-
-    let files_list = [];
-
     for(let file of files) {
-        files_list.push({
-            file: file,
-            id: counter++,
-            size_group: getSizeGroup(file.size),
-            type_group: getTypeGroup(file.type)
-        });
-        files2upload_size += file.size;
+        uploadFile(file, true);
     }
-
-    files_list.sort(compareFiles);
-
-    // process already processed files
-    for(let file_obj of files_list) {
-        upload_div.appendChild(renderUploadItem(file_obj));
-    }
-
-    // append new files to existing queue
-    Array.prototype.push.apply(files2upload, files_list);
 
     files2upload.sort(compareFiles);
-
+    sortUploadNodes();
     processUploadQueue();
 }
 
@@ -304,7 +341,7 @@ function processUploadQueue() {
         }
 
         // process file
-        uploadFile(file);
+        uploadFilePipeline(file);
     }
 }
 
@@ -495,7 +532,7 @@ function upload_file(file) {
     });
 }
 
-function uploadFile(file) {
+function uploadFilePipeline(file) {
     return get_file_sha1(file)
     .then(mark_file_inprogress)
     .then(check_duplicate)
