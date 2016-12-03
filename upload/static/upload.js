@@ -10,6 +10,16 @@ let UPLOAD_WORKERS_NUM_MAX = 3;
 let last_dragenter_target = null;
 let UPLOAD_DIV;
 
+// How often we could re-sort
+const UPLOAD_SORT_DELAY_MS = 500;
+
+// Whether sorting is scheduled or running
+let UPLOAD_SORT_TIMER_ID = null;
+
+// Whether new requests came during sorting
+let UPLOAD_SORT_AGAIN = false;
+
+
 function initUpload() {
     document.documentElement.addEventListener("dragenter", dragenter, false);
     document.documentElement.addEventListener("dragleave", dragleave, false);
@@ -94,7 +104,7 @@ function uploadEntries(entries) {
         if(entry.isDirectory) {
             entry.createReader().readEntries(uploadEntries);
         } else {
-            // TODO: Limit amount of FileEntries that are resolved into files simultaneously
+            // Resolving FileEntry into a file fast and needs no queue (i.e. limit for simultaneous operations)
             entry.file(uploadFile);
         }
     }
@@ -264,9 +274,11 @@ function compareUploadNodes(a, b) {
 }
 
 function sortUploadNodes() {
-    // TODO: Sort not more often than every N seconds
+    // Convert nodes to list
     let elements = Array.from(UPLOAD_DIV.children);
+    // Sort nodes
     elements.sort(compareUploadNodes);
+    // Re-append nodes to container, that would move them in the order of appending
     for(let element of elements) {
         UPLOAD_DIV.appendChild(element);
     }
@@ -287,21 +299,44 @@ function uploadFile(file, batch) {
     files2upload.push(file_obj);
 
     if(!batch) {
-        // TODO: Somehow limit maximum rate of updates
-        files2upload.sort(compareFiles);
-        sortUploadNodes();
+        scheduleUploadSort();
         processUploadQueue();
     }
 }
+
 
 function uploadFiles(files) {
     for(let file of files) {
         uploadFile(file, true);
     }
 
+    scheduleUploadSort();
+    processUploadQueue();
+}
+
+function scheduleUploadSort() {
+    if(!UPLOAD_SORT_TIMER_ID) {
+        // nothing scheduled or runs at the moment -> start now
+        UPLOAD_SORT_TIMER_ID = true;    // Assign some value while setTimeout takes time too
+        UPLOAD_SORT_TIMER_ID = window.setTimeout(uploadSort, 0);
+    } else {
+        UPLOAD_SORT_AGAIN = true;
+    }
+}
+
+function uploadSort() {
+    UPLOAD_SORT_AGAIN = false;
+
     files2upload.sort(compareFiles);
     sortUploadNodes();
-    processUploadQueue();
+
+    if(UPLOAD_SORT_AGAIN) {
+        // New requests came during sorting. No need to put temp "true" here since it is already there.
+        UPLOAD_SORT_TIMER_ID = window.setTimeout(uploadSort, UPLOAD_SORT_DELAY_MS);
+    } else {
+        // No requests -> clear the state. It MUST be done at the end of the function to avoid race conditions
+        UPLOAD_SORT_TIMER_ID = null;
+    }
 }
 
 function eraseUploadState() {
@@ -319,8 +354,6 @@ function eraseUploadState() {
 }
 
 function processUploadQueue() {
-    // DEBUG:
-    // return;
     if(!(files2upload.length + UPLOAD_WORKERS_NUM)) {
         // Once all uploads are finished -- reset the state
         eraseUploadState();
@@ -330,6 +363,9 @@ function processUploadQueue() {
     let upload_status_div = document.getElementById('upload_remaining');
     upload_status_div.classList.remove('hidden');
     upload_status_div.innerText = `${files2upload.length + files_w_error.length + UPLOAD_WORKERS_NUM} files: ${bytes2text(files2upload_size)}`;
+
+    // DEBUG:
+    // return;
 
     let num, file;
 
@@ -428,7 +464,7 @@ function errorFileUpload(file) {
 }
 
 function get_file_sha1(file) {
-    // TODO: Consider iterative hashing, since we cannot handle >= 3 GB files
+    // TODO: Consider iterative OR partial hashing, since we cannot handle >= 3 GB files
     // See: https://lists.w3.org/Archives/Public/public-webcrypto/2016Nov/0000.html
     //      https://lists.w3.org/Archives/Public/public-webcrypto/2016Nov/0001.html
     //      https://github.com/w3c/webcrypto/issues/73
