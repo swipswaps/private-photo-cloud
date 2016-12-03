@@ -64,21 +64,28 @@ function drop(e) {
     e.stopPropagation();
     disableDrop(e);
 
-    if(checkDirectoryReader(e.dataTransfer)) {
-        // browser supports .webkitGetAsEntry
-        let entries = [];
-        for(let item of e.dataTransfer.items) {
-            entries.push(item.webkitGetAsEntry());
-        }
-        console.log(e.dataTransfer.files);
-        uploadEntries(entries);
+    if(!checkFolderSupport(e.dataTransfer)) {
+        // no directory reader, simply use files
+        uploadEntries(e.dataTransfer.files);
     } else {
-        // HTML5-standard approach, does not support reading directories
-        uploadFiles(e.dataTransfer.files);
+        let files = [];
+        let folders = [];
+        for(let item of e.dataTransfer.items) {
+            let entry = item.webkitGetAsEntry();
+            if(entry.isFile) {
+                // file -> get file directly, without callback
+                files.push(item.getAsFile());
+            } else {
+                // directory -> get FileEntry to read all files inside
+                folders.push(item.webkitGetAsEntry())
+            }
+        }
+        uploadEntries(folders);
+        uploadFiles(files);
     }
 }
 
-function checkDirectoryReader(dataTransfer) {
+function checkFolderSupport(dataTransfer) {
     return (dataTransfer.items && dataTransfer.items.length && dataTransfer.items[0].webkitGetAsEntry);
 }
 
@@ -87,6 +94,7 @@ function uploadEntries(entries) {
         if(entry.isDirectory) {
             entry.createReader().readEntries(uploadEntries);
         } else {
+            // TODO: Limit amount of FileEntries that are resolved into files simultaneously
             entry.file(uploadFile);
         }
     }
@@ -279,6 +287,7 @@ function uploadFile(file, batch) {
     files2upload.push(file_obj);
 
     if(!batch) {
+        // TODO: Somehow limit maximum rate of updates
         files2upload.sort(compareFiles);
         sortUploadNodes();
         processUploadQueue();
@@ -310,7 +319,8 @@ function eraseUploadState() {
 }
 
 function processUploadQueue() {
-    // DEBUG: return;
+    // DEBUG:
+    // return;
     if(!(files2upload.length + UPLOAD_WORKERS_NUM)) {
         // Once all uploads are finished -- reset the state
         eraseUploadState();
