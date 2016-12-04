@@ -125,7 +125,7 @@ img.media:hover {
 }
 
 .upload_progressbar {
-	height: 3px;
+	height: 2px;
 	margin: 1px 0 0 0;
     transition: width 0.5s;
 	width: 0;
