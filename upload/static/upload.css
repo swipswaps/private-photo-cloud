@@ -45,19 +45,15 @@
 .upload_file {
     display: inline-flex;
     margin: 1px 0 0 1px;
-    border: solid 1px black;
+    background-color: darkgray;
 }
 
-.type_image {
-    border-color: darkgreen;
+div.type_image {
+	background-color: green;
 }
 
-.type_video {
-    border-color: orange;
-}
-
-.type_other {
-    border-color: #666;
+div.type_video {
+    background-color: orange;
 }
 
 div.media {
@@ -101,25 +97,21 @@ img.media:hover {
 .tiny {
     width: 5px;
     height: 5px;
-    background-color: green;
 }
 
 .small {
     width: 10px;
     height: 10px;
-    background-color: yellowgreen;
 }
 
 .medium {
     width: 20px;
     height: 20px;
-    background-color: yellow;
 }
 
 .large {
     width: 30px;
     height: 30px;
-    background-color: #ffe3b3;
 }
 
 /* if size class changes -- break a line */
@@ -132,13 +124,12 @@ img.media:hover {
     height: 20px;
 }
 
-#currently_uploading > div {
-	border-style: solid;
-	border-width: 1px;
-	height: 1px;
+.upload_progressbar {
+	height: 3px;
 	margin: 1px 0 0 0;
     transition: width 0.5s;
 	width: 0;
+	background-color: darkgray;
 }
 
 .inprogress {
