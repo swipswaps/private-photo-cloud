@@ -12,6 +12,8 @@ let UPLOAD_WORKERS_NUM = 0;
 let UPLOAD_WORKERS_NUM_MAX = 3;
 let last_dragenter_target = null;
 let UPLOAD_DIV;
+const LOAD_RETRIES_NUM = 5;
+const LOAD_RETRIES_BASE = 2;
 
 // How often we could re-sort
 const UPLOAD_SORT_DELAY_MS = 500;
@@ -31,7 +33,8 @@ function initUpload() {
     UPLOAD_DIV = document.getElementById('images_to_upload');
 }
 
-/* Drag-n-Drop
+/*
+Drag-n-Drop
 
 Drag and dro is rather complex thing. By default dragenter and dragleave runs on parent and ALL children.
 So that if we listen to all events, we have a lot of garbage.
@@ -240,12 +243,46 @@ function renderUploadItem(file_obj) {
     return div;
 }
 
+function loadImage() {
+    this.src = this.dataset.source;
+}
+
+function retryImageLoad(e) {
+    if(this.src == window.PLACEHOLDER_IMAGE_SRC) {
+        // failed to load placeholder image :(
+        return;
+    }
+
+    this.src = window.PLACEHOLDER_IMAGE_SRC;
+
+    let load_try = (parseInt(this.dataset.load_try) || 0) + 1;
+
+    if(load_try >= LOAD_RETRIES_NUM) {
+        // too many tries already
+        return;
+    }
+
+    // increase tries counter
+    this.dataset.load_try = load_try;
+
+    // try to load image again -- in 2^tries seconds
+    window.setTimeout(loadImage.bind(this), 1000 * Math.pow(LOAD_RETRIES_BASE, load_try));
+}
+
 function renderUploadedItem(file_obj) {
     // Media.id is a hard identifier, no need to use any other unique value, e.g. SHA1 sum
     let element;
     if(file_obj.media.thumbnail) {
         element = document.createElement('img');
         element.setAttribute('src', file_obj.media.thumbnail);
+
+        // TODO: Use async image loading from the very beginning IF we know there is no image yet
+        // See http://blog.teamtreehouse.com/learn-asynchronous-image-loading-javascript
+        if(window.PLACEHOLDER_IMAGE_SRC) {
+            // if there is a placeholder image -- do all this trick with image reloading
+            element.dataset.source = file_obj.media.thumbnail;
+            element.onerror = retryImageLoad;
+        }
     } else {
         element = document.createElement('div');
     }
@@ -586,7 +623,7 @@ function upload_file(file) {
         // Extract error from JSON response first
         return response.json().then(function(json){
             if(json.error) {
-                throw Error(json.error);
+                throw Error(JSON.stringify(json.error));
             } else if(!response.ok) {
                 throw Error('Failed to upload');
             }

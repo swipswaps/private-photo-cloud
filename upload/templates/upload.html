@@ -6,7 +6,8 @@
 	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}upload.css" />
 	<script src="{{ STATIC_URL }}upload.js"></script>
 	<script>
-		var UPLOAD_SESSION_ID = "{{ UPLOAD_SESSION_ID|escapejs }}";
+		window.UPLOAD_SESSION_ID = "{{ UPLOAD_SESSION_ID|escapejs }}";
+		window.PLACEHOLDER_IMAGE_SRC = "{{ STATIC_URL|escapejs }}placeholder.svg";
 	</script>
 </head>
 <body>
@@ -19,13 +20,13 @@
 	<input type="file" multiple webkitdirectory id="directory_input" onchange="uploadFiles(this.files)" style='display:none' />
 </p>
 
+<p>Upload would start automatically.</p>
+
 <div class="hidden fullscreen" id="drop-info">
 	<div>
 		Drop files anywhere
 	</div>
 </div>
-
-<p>Upload would start automatically.</p>
 
 {% spaceless %}
 <div id="upload_remaining"></div>

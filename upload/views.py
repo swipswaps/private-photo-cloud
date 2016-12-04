@@ -45,7 +45,8 @@ def upload_file(request):
     resp = JsonResponse({
         'media': {
             'id': media.id,
-            'thumbnail': media.thumbnail.url if media.thumbnail else None,
+            # TODO: Somehow indicate that there was not original thumbnail -- so client wait or render directly
+            'thumbnail': media.thumbnail.url if media.thumbnail else media.default_thumbnail_url,
         }
     })
     resp.status_code = 201  # HTTP 201 Created

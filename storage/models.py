@@ -200,7 +200,8 @@ class Media(MediaConstMixin, models.Model):
     @classmethod
     def process(cls, sender, instance, **kwargs):
         # Somehow lambda does not work as listener for signals
-        process_media_state(instance.pk)
+        # Run all processing in background
+        process_media_state.delay(instance.pk)
 
 
 # We must make it static after initialization, otherwise methods would not work in FileField
