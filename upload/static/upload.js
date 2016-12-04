@@ -2,6 +2,9 @@
 
 let files2upload = [];
 let files2upload_size = 0;
+let files_uploaded_size = 0;
+let files_uploaded_num = 0;
+let files_uploaded_start = null;
 let files_w_error = [];
 let files_by_hash = {};
 let counter = 1;
@@ -255,7 +258,7 @@ function renderUploadedItem(file_obj) {
 function renderUploadProgress(file_obj) {
     let div = document.createElement('div');
     div.setAttribute('id', `upload_${file_obj.id}_progressbar`);
-    div.classList.add(CLASS_BY_TYPE[file_obj.type_group], CLASS_BY_GROUP[file_obj.size_group]);
+    div.classList.add('upload_progressbar', CLASS_BY_TYPE[file_obj.type_group], CLASS_BY_GROUP[file_obj.size_group]);
     return div;
 }
 
@@ -341,9 +344,16 @@ function uploadSort() {
 
 function eraseUploadState() {
     let upload_status_div = document.getElementById('upload_remaining');
-    upload_status_div.classList.add('hidden');
-    upload_status_div.innerText = '';
+    let upload_duration = (new Date() - files_uploaded_start) / 1000.0;
+    upload_status_div.innerHTML = `Uploaded
+        ${files_uploaded_num} files:
+        ${bytes2text(files_uploaded_size)}
+        (${bytes2text(files_uploaded_size / upload_duration)}/s, ${parseInt(upload_duration * 10) / 10.0}s)
+    `;
     files_by_hash = {};
+    files_uploaded_start = null;
+    files_uploaded_num = 0;
+    files_uploaded_size = 0;
     /* Assert following state:
     files2upload = []
     files2upload_size = 0
@@ -354,15 +364,26 @@ function eraseUploadState() {
 }
 
 function processUploadQueue() {
+    if(!files_uploaded_start) {
+        files_uploaded_start = true;    // temp value since "new Date()" takes time
+        files_uploaded_start = new Date();
+    }
+
     if(!(files2upload.length + UPLOAD_WORKERS_NUM)) {
         // Once all uploads are finished -- reset the state
-        eraseUploadState();
-        return
+        return eraseUploadState();
     }
 
     let upload_status_div = document.getElementById('upload_remaining');
     upload_status_div.classList.remove('hidden');
-    upload_status_div.innerText = `${files2upload.length + files_w_error.length + UPLOAD_WORKERS_NUM} files: ${bytes2text(files2upload_size)}`;
+
+    let upload_duration = (new Date() - files_uploaded_start) / 1000.0;
+
+    upload_status_div.innerHTML = `Upload
+        ${files2upload.length + files_w_error.length + UPLOAD_WORKERS_NUM} files:
+        ${bytes2text(files2upload_size)}
+        (${bytes2text(files_uploaded_size / upload_duration)}/s)
+    `;
 
     // DEBUG:
     // return;
@@ -397,6 +418,8 @@ function finishFileUpload(file) {
     // release worker
     UPLOAD_WORKERS_NUM--;
     files2upload_size -= file.file.size;
+    files_uploaded_size += file.file.size;
+    files_uploaded_num++;
     // document.getElementById(`upload_${file.id}`).remove();
 
     let upload_div = document.getElementById(`upload_${file.id}`);
