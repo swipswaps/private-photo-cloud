@@ -21,3 +21,7 @@ def resolve_dict(path, data):
         except KeyError:
             return None
     return data
+
+
+def map_dict(data, mappings):
+    return {mappings.get(k, k): v for k, v in data.items()}

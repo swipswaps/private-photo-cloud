@@ -1,7 +1,9 @@
 import base64
 import binascii
-import datetime
+import os
 
+import logging
+from django.conf import settings
 from django.contrib.postgres.fields import JSONField
 from django.db import models
 from django.contrib.auth.models import User
@@ -10,7 +12,9 @@ from django.db.models.signals import post_save
 
 from storage.tools.sequence import get_next_value
 from .const import ShotConstMixin, MediaConstMixin
-from .states import MediaState, InitialMediaState
+from .states import MediaState, InitialMediaState, process_media_state
+
+logger = logging.getLogger(__name__)
 
 
 class ShotCategory(models.Model):
@@ -66,7 +70,8 @@ class Media(MediaConstMixin, models.Model):
 
     def generate_content_filename(instance, filename):
         if instance.show_at and instance.content_extension:
-            return 'content/{0.uploader_id}/{0.show_at:%Y%m}/{0.sha1_hex}_{0.size_bytes}{0.content_extension}'.format(instance)
+            return 'content/{0.uploader_id}/{0.show_at:%Y%m}/{0.sha1_hex}_{0.size_bytes}{0.content_extension}'.format(
+                instance)
         return 'content/{0.uploader_id}/{0.sha1_hex}_{0.size_bytes}'.format(instance)
 
     def generate_thumbnail_filename(instance, filename):
@@ -148,6 +153,14 @@ class Media(MediaConstMixin, models.Model):
             ('uploader', 'sha1_b85', 'size_bytes'),
         )
 
+    @property
+    def unique_key(self):
+        return {
+            'uploader_id': self.uploader_id,
+            'sha1_b85': self.sha1_b85,
+            'size_bytes': self.size_bytes,
+        }
+
     # hashers properties, are often used
     @property
     def sha1_hex(self):
@@ -157,9 +170,6 @@ class Media(MediaConstMixin, models.Model):
     def sha1_hex(self, digest_hex):
         self.sha1_b85 = base64.b85encode(binascii.unhexlify(digest_hex))
 
-    @staticmethod
-    def hex_to_base85(value):
-        return base64.b85encode(binascii.unhexlify(value))
     # /hashers properties
 
     @property
@@ -171,11 +181,26 @@ class Media(MediaConstMixin, models.Model):
         assert issubclass(value, MediaState), f'{value!r} must be instance of MediaState'
         self.processing_state_code = value.STATE_CODE
 
+    @property
+    def default_thumbnail_url(self):
+        return settings.MEDIA_URL + self.generate_thumbnail_filename(self, None)
+
+    def update_content_location(self):
+        content_suffix = self.generate_content_filename(self, None)
+        content_path = os.path.join(settings.MEDIA_ROOT, content_suffix)
+
+        if content_path == self.content.path:
+            return
+
+        logger.info(f'Move content file: {self.content.path} => {content_path}...')
+        os.makedirs(os.path.dirname(content_path), exist_ok=True)
+        os.rename(self.content.path, content_path)
+        self.content.name = content_suffix
+
     @classmethod
     def process(cls, sender, instance, **kwargs):
-        media = instance
-
-        media.processing_state.run(media)
+        # Somehow lambda does not work as listener for signals
+        process_media_state(instance.pk)
 
 
 # We must make it static after initialization, otherwise methods would not work in FileField
@@ -183,9 +208,7 @@ Media.generate_content_filename = staticmethod(Media.generate_content_filename)
 Media.generate_thumbnail_filename = staticmethod(Media.generate_thumbnail_filename)
 Media.generate_screenshot_filename = staticmethod(Media.generate_screenshot_filename)
 
-
 post_save.connect(Media.process, sender=Media)
-
 
 """
 # TODO: Convert to model manager or proxy model

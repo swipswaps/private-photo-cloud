@@ -6,27 +6,35 @@ import os
 import re
 import tempfile
 
+from celery import shared_task
+
 from PIL import Image
-from django.conf import settings
 from django.core.files.uploadedfile import TemporaryUploadedFile, SimpleUploadedFile
 from django.utils import timezone
 
 from storage import helpers
 from storage.helpers import resolve_dict, get_first_filled_value
 from storage.tools import ffmpeg
-from storage.tools.binhash import get_sha1_hex
 from storage.tools.exiftool import get_exiftool_info, extract_any_embed_image
 
 logger = logging.getLogger(__name__)
+
+
+@shared_task
+def process_media_state(media_id):
+    from storage.models import Media
+    try:
+        media = Media.objects.get(pk=media_id)
+    except Media.DoesNotExist:
+        return
+
+    media.processing_state.run(media)
 
 
 class MediaState:
     STATE_CODE = None
 
     STATES = {}
-
-    class InvalidUploadError(ValueError):
-        pass
 
     @classmethod
     def get_state(cls, code):
@@ -36,10 +44,6 @@ class MediaState:
     def run(cls, media):
         try:
             cls.process(media)
-        except cls.InvalidUploadError as ex:
-            logger.error(ex)
-            media.delete()
-            raise
         except Exception as ex:
             # That is breaking an abstraction
             media.processing_state_code = - cls.STATE_CODE
@@ -103,7 +107,7 @@ class MetadataMediaState(MediaState):
         # 'MakerNotes:SensorWidth',       # ~ +40px of real size
         # 'MakerNotes:CanonImageWidth',   # about 1/2 of real size
 
-        "EXIF:ImageWidth",              # for canon CR2 it gives 1/2, but right value for Nikon
+        "EXIF:ImageWidth",  # for canon CR2 it gives 1/2, but right value for Nikon
     )
 
     IMAGE_HEIGHT_KEYS = (
@@ -116,7 +120,7 @@ class MetadataMediaState(MediaState):
 
         # 'MakerNotes:SensorHeight',      # ~ +28px of real size
         # 'MakerNotes:CanonImageHeight',  # about 1/2 of real size
-        'EXIF:ImageHeight',             # for canon CR2 it gives 1/2, but right value for Nikon
+        'EXIF:ImageHeight',  # for canon CR2 it gives 1/2, but right value for Nikon
     )
 
     IMAGE_CAMERA_KEYS = (
@@ -162,7 +166,6 @@ class MetadataMediaState(MediaState):
     def process(cls, media):
         """check size, hash, get proper content-type, other metadata (e.g. duration)"""
         import magic
-        from storage.models import Media
 
         logger.debug("extract metadata")
 
@@ -177,18 +180,6 @@ class MetadataMediaState(MediaState):
 
         # Set media_type
         media.media_type = cls.get_media_type_by_mimetype(media.mimetype)
-
-        # Verify file size
-        size_bytes = media.content.size
-
-        if media.size_bytes != size_bytes:
-            raise cls.InvalidUploadError(f'actual size does not match declared: {size_bytes!r} != {media.size_bytes!r}')
-
-        # Verify file hash
-        sha1_hex = get_sha1_hex(media.content.path)
-
-        if media.sha1_hex != sha1_hex:
-            raise cls.InvalidUploadError(f'actual SHA1 sum does not match declared: {sha1_hex!r} != {media.sha1_hex!r}')
 
         # It makes no sense to generate SHA1 for image content (i.e. without metadata) since metadata removal is usually
         # implies re-compression, so content changes.
@@ -251,14 +242,7 @@ class MetadataMediaState(MediaState):
         if media.content_extension != user_file_extension:
             logging.info(f'Changed file extension: {user_file_extension!r} => {media.content_extension!r}')
 
-        content_suffix = Media.generate_content_filename(media, None)
-        content_path = os.path.join(settings.MEDIA_ROOT, content_suffix)
-
-        if content_path != media.content.path:
-            logging.info(f'Move content file: {media.content.path} => {content_path}...')
-            os.makedirs(os.path.dirname(content_path), exist_ok=True)
-            os.rename(media.content.path, content_path)
-            media.content.name = content_suffix
+        media.update_content_location()
 
     @classmethod
     def get_content_extension(cls, media):
@@ -345,7 +329,6 @@ class MetadataMediaState(MediaState):
         elif mime_type == 'video':
             return Media.MEDIA_VIDEO
         return Media.MEDIA_OTHER
-
 
     @classmethod
     def get_image_needed_rotate_degree(cls, metadata):
@@ -512,15 +495,14 @@ class ClassifyMediaState(MediaState):
     @classmethod
     def process(cls, media):
         """Classify the media"""
-        from upload.tasks import run_group_media_into_shot
-        run_group_media_into_shot.delay(media_id=media.pk, session_id=media.session_id)
+        from classification import group_media_into_shot
+        group_media_into_shot.process(media_id=media.pk, session_id=media.session_id)
 
         # TODO: Add more classification
 
         # TODO: Group SDR + HDR
         # TODO: Group bursts
         # TODO: Mark media with tags, e.g. "RAW", "Orig", "HDR", "Modified"
-
 
 
 class OptimizeForWebMediaState(MediaState):
