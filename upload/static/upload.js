@@ -107,6 +107,10 @@ function checkFolderSupport(dataTransfer) {
 
 function uploadEntries(entries) {
     for(let entry of entries) {
+        if(entry.name[0] == '.') {
+            console.warn(`Ignored file: ${entry.name}`);
+            continue;
+        }
         if(entry.isDirectory) {
             entry.createReader().readEntries(uploadEntries);
         } else {
@@ -243,46 +247,59 @@ function renderUploadItem(file_obj) {
     return div;
 }
 
-function loadImage() {
-    this.src = this.dataset.source;
+
+function sleep(seconds) {
+    return new Promise(function(resolve, reject) {
+       window.setTimeout(resolve, 1000 * seconds);
+    });
 }
 
-function retryImageLoad(e) {
-    if(this.src == window.PLACEHOLDER_IMAGE_SRC) {
-        // failed to load placeholder image :(
+
+function bgImageLoad(img, url, try_num) {
+    try_num = try_num || 1;
+    if(try_num > LOAD_RETRIES_NUM) {
+        // failed to load in given tries
         return;
     }
 
-    this.src = window.PLACEHOLDER_IMAGE_SRC;
-
-    let load_try = (parseInt(this.dataset.load_try) || 0) + 1;
-
-    if(load_try >= LOAD_RETRIES_NUM) {
-        // too many tries already
-        return;
-    }
-
-    // increase tries counter
-    this.dataset.load_try = load_try;
-
-    // try to load image again -- in 2^tries seconds
-    window.setTimeout(loadImage.bind(this), 1000 * Math.pow(LOAD_RETRIES_BASE, load_try));
+    sleep(Math.pow(LOAD_RETRIES_BASE, try_num)
+        ).then(function(){
+            return fetch(url, {credentials: 'same-origin'});
+        }).then(function(response) {
+            if(response.status === 404) {
+                // file is not ready yet
+                return null;
+            } else if(!response.ok) {
+                throw Error();
+            }
+            return response.blob();
+        }).then(function(blob) {
+            if(blob) {
+                let url = URL.createObjectURL(blob);
+                img.onloadend = function(){
+                    URL.revokeObjectURL(url);
+                };
+                img.src = url;
+            } else if(try_num < LOAD_RETRIES_NUM) {
+                bgImageLoad(img, url, try_num + 1);
+            }
+        });
 }
+
 
 function renderUploadedItem(file_obj) {
     // Media.id is a hard identifier, no need to use any other unique value, e.g. SHA1 sum
     let element;
-    if(file_obj.media.thumbnail) {
+
+    if(file_obj.media.thumbnail && file_obj.media.thumbnail[0] != '!') {
+        // thumbnail is there and it is ready
         element = document.createElement('img');
         element.setAttribute('src', file_obj.media.thumbnail);
-
-        // TODO: Use async image loading from the very beginning IF we know there is no image yet
-        // See http://blog.teamtreehouse.com/learn-asynchronous-image-loading-javascript
-        if(window.PLACEHOLDER_IMAGE_SRC) {
-            // if there is a placeholder image -- do all this trick with image reloading
-            element.dataset.source = file_obj.media.thumbnail;
-            element.onerror = retryImageLoad;
-        }
+    } else if(window.PLACEHOLDER_IMAGE_SRC) {
+        element = document.createElement('img');
+        element.setAttribute('src', window.PLACEHOLDER_IMAGE_SRC);
+        // try to load image in background
+        bgImageLoad(element, file_obj.media.thumbnail.substring(1));
     } else {
         element = document.createElement('div');
     }
@@ -557,8 +574,11 @@ function check_already_uploaded(file) {
     return fetch(`/upload/media/sha1_${file.sha1}_${file.file.size}/`, {
         credentials: 'same-origin'
     }).then(function(response){
-        if(!response.ok){
-            throw Error('failed to check duplicates');
+        if(response.status === 404) {
+            // image was not found in the system
+            return {media: null};
+        } else if(!response.ok){
+            throw Error(`failed to check duplicates: HTTP ${response.status}`);
         }
         return response.json();
     }).then(function(json){
