@@ -4,7 +4,7 @@ import datetime
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
 from django.template.response import TemplateResponse
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseNotFound
 
 from storage import models
 from upload.forms import UploadForm
@@ -21,36 +21,34 @@ def upload(request):
     })
 
 
+def uploaded_media2dict(media):
+    return {'media':
+        {
+            'id': media.id,
+            # Exclamation mark would indicate that there is no thumbnail yet
+            'thumbnail': media.thumbnail.url if media.thumbnail else f'!{media.default_thumbnail_url}',
+        }
+    }
+
+
 @login_required
 def upload_file(request):
     form = UploadForm(request.POST, request.FILES)
 
     if not form.is_valid():
-        resp = JsonResponse({
-            'error': dict(form.errors)
-        })
-        print(form.errors)
-        resp.status_code = 400  # HTTP 400 Bad request
-        return resp
+        return JsonResponse({'error': dict(form.errors)}, status=400)   # HTTP 400 Bad request
 
     media = models.Media(uploader_id=request.user.id, **form.model_data)
 
     try:
         # This save is as dummy as possible -- return only ID and do all processing in background
         media.save()
+        return JsonResponse(uploaded_media2dict(media), status=201) # HTTP 201 Created
+
     except IntegrityError:
         logger.warning(f'Got duplicate image: {media.unique_key}')
         media = models.Media.objects.get(**media.unique_key)
-
-    resp = JsonResponse({
-        'media': {
-            'id': media.id,
-            # TODO: Somehow indicate that there was not original thumbnail -- so client wait or render directly
-            'thumbnail': media.thumbnail.url if media.thumbnail else media.default_thumbnail_url,
-        }
-    })
-    resp.status_code = 201  # HTTP 201 Created
-    return resp
+        return JsonResponse(uploaded_media2dict(media))
 
 
 @login_required
@@ -66,9 +64,6 @@ def check_present(request, alg=None, digest=None, size=None):
     try:
         media = models.Media.objects.get(uploader=request.user, sha1_b85=digest_b85, size_bytes=size)
     except models.Media.DoesNotExist:
-        return JsonResponse({'media': None})
+        return HttpResponseNotFound()
 
-    return JsonResponse({'media': {
-        'id': media.id,
-        'thumbnail': media.thumbnail.url if media.thumbnail else None,
-    }})
+    return JsonResponse(uploaded_media2dict(media))
