@@ -212,6 +212,16 @@ Media.generate_screenshot_filename = staticmethod(Media.generate_screenshot_file
 post_save.connect(Media.process, sender=Media)
 
 """
+Re-process not finished processes:
+
+# TODO: Make management command out of it
+
+from storage.models import *
+for m_id in Media.objects.filter(processing_state_code__lt=6).values_list('id', flat=True):
+    process_media_state.delay(m_id)
+"""
+
+"""
 # TODO: Convert to model manager or proxy model
 
 class Photo(Media):
