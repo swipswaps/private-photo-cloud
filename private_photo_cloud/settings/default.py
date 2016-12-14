@@ -53,6 +53,7 @@ STATIC_URL = '/static/'
 MEDIA_URL = '/media/'
 
 LOGIN_URL = 'login'
+LOGIN_REDIRECT_URL = '/'
 
 TEMPLATES[0]['DIRS'] = [
     os.path.join(BASE_DIR, 'templates'),
