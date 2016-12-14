@@ -1,9 +1,13 @@
 # All dependencies must be frozen
 
-Django==1.10.4              # web framework, last stable version
+#Django==1.11              # web framework, last stable version
+# Use latest from master, i.e. pre-1.11
+https://github.com/django/django/archive/e5d3f98abcdc20d64d99609bd0aa82331835b439.tar.gz
+
 pytz==2016.10               # timezones for Django
 dj-database-url==0.4.1      # database config via URL
 django-cache-url==1.3.1     # cache config via URL
+dj-email-url==0.0.10        # email config via URL
 
 djangorestframework==3.5.3  # REST framework
 Markdown==2.6.7             # for REST framework -- browsable API
