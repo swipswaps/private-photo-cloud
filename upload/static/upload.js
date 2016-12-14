@@ -1,5 +1,7 @@
 'use strict';
 
+// TODO: Rewrite with ES6
+
 let files2upload = [];
 let files2upload_size = 0;
 let files_uploaded_size = 0;

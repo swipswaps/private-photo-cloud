@@ -1,5 +1,7 @@
 'use strict';
 
+// TODO: Rewrite with ES6
+
 const HIDPI_SCALE = 2;
 const MEDIA_IMAGE = 1;
 const MEDIA_VIDEO = 2;
