@@ -1,6 +1,7 @@
 import os
 import dj_database_url
 import django_cache_url
+import dj_email_url
 
 from .factory_defaults import *
 
@@ -18,7 +19,14 @@ CACHES = {
 SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "persistent"
 
-INSTALLED_APPS += [
+locals().update(dj_email_url.config())
+
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
     'storage',
     'upload',
     'catalog',
@@ -46,7 +54,7 @@ MEDIA_URL = '/media/'
 
 LOGIN_URL = 'login'
 
-TEMPLATES[0]['DIRS'] += [
+TEMPLATES[0]['DIRS'] = [
     os.path.join(BASE_DIR, 'templates'),
 ]
 
