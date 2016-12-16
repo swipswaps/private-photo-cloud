@@ -259,59 +259,58 @@ function sleep(seconds) {
     });
 }
 
+function renderUploadedItem(file_obj) {
+    // Media.id is a hard identifier, no need to use any other unique value, e.g. SHA1 sum
+    let $element;
 
-function bgImageLoad(img, url, try_num) {
-    try_num = try_num || 1;
-    if(try_num > LOAD_RETRIES_NUM) {
-        // failed to load in given tries
-        return;
+    if(!file_obj.media.thumbnail) {
+        // media has no thumbnail
+        $element = document.createElement('div');
+    } else  if(file_obj.media.thumbnail === '!') {
+        // image just uploaded, thumbnail would come later
+        $element = document.createElement('img');
+        $element.setAttribute('src', window.PLACEHOLDER_IMAGE_SRC);
+    } else {
+        // thumbnail is ready
+        $element = document.createElement('img');
+        $element.setAttribute('src', file_obj.media.thumbnail);
     }
 
-    sleep(Math.pow(LOAD_RETRIES_BASE, try_num)
-        ).then(function(){
-            return fetch(url, {credentials: 'same-origin'});
-        }).then(function(response) {
-            if(response.status === 404) {
-                // file is not ready yet
-                return null;
-            } else if(!response.ok) {
+    $element.setAttribute('id', `media_${file_obj.media.id}`);
+    $element.classList.add('media');
+    return $element;
+}
+
+function loadImage($element, url) {
+    return fetch(url, {credentials: 'same-origin'}
+        ).then(function(response) {
+            if(!response.ok) {
                 throw Error();
             }
             return response.blob();
         }).then(function(blob) {
-            if(blob) {
-                let url = URL.createObjectURL(blob);
-                img.onloadend = function(){
-                    URL.revokeObjectURL(url);
-                };
-                img.src = url;
-            } else if(try_num < LOAD_RETRIES_NUM) {
-                bgImageLoad(img, url, try_num + 1);
-            }
+            let blob_url = URL.createObjectURL(blob);
+            $element.onloadend = function(){
+                URL.revokeObjectURL(blob_url);
+            };
+            $element.src = blob_url;
         });
 }
 
-
-function renderUploadedItem(file_obj) {
-    // Media.id is a hard identifier, no need to use any other unique value, e.g. SHA1 sum
-    let element;
-
-    if(file_obj.media.thumbnail && file_obj.media.thumbnail[0] != '!') {
-        // thumbnail is there and it is ready
-        element = document.createElement('img');
-        element.setAttribute('src', file_obj.media.thumbnail);
-    } else if(window.PLACEHOLDER_IMAGE_SRC) {
-        element = document.createElement('img');
-        element.setAttribute('src', window.PLACEHOLDER_IMAGE_SRC);
-        // try to load image in background
-        bgImageLoad(element, file_obj.media.thumbnail.substring(1));
-    } else {
-        element = document.createElement('div');
+function updateUploadedItem(file_obj) {
+    let $element = document.getElementById(`media_${file_obj.media.id}`);
+    if(!$element) {
+        // element is not present on the screen
+        return;
     }
 
-    element.setAttribute('id', `media_${file_obj.media.id}`);
-    element.classList.add('media');
-    return element;
+    if(file_obj.media.thumbnail) {
+        // quick path -- update image in background
+        loadImage($element, file_obj.media.thumbnail);
+    } else {
+        // replace element
+        $element.parentNode.replaceChild(renderUploadedItem(file_obj), $element);
+    }
 }
 
 function renderUploadProgress(file_obj) {
@@ -707,3 +706,24 @@ function fetch_w_progress(url, settings, onprogress) {
 }
 
 window.addEventListener("DOMContentLoaded", initUpload, true);
+
+// inform about uploads
+let socket = new WebSocket("ws://" + window.location.host);
+
+socket.onmessage = function (e) {
+    let data = JSON.parse(e.data);
+    let url = data[0];
+    let file_obj = data[1];
+
+    if(url == 'thumbnail') {
+        updateUploadedItem(file_obj);
+    }
+};
+
+socket.onerror = function(){
+    console.log('socket error');
+};
+
+socket.onclose = function(){
+    console.log('socket closed');
+};

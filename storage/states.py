@@ -41,6 +41,10 @@ class MediaState:
         return cls.STATES.get(code, UnknownMediaState)
 
     @classmethod
+    def post_save(cls, media):
+        pass
+
+    @classmethod
     def run(cls, media):
         try:
             cls.process(media)
@@ -54,6 +58,7 @@ class MediaState:
 
         # That would trigger execution of the next state
         media.save()
+        cls.post_save(media)
 
     @classmethod
     def get_next_state(cls, media):
@@ -438,6 +443,19 @@ class ThumbnailMediaState(MediaState):
     @classmethod
     def get_next_state(cls, media):
         return ClassifyMediaState
+
+    @classmethod
+    def post_save(cls, media):
+        from channels import Group
+
+        Group(f'upload-{media.uploader_id}').send({
+            'text': json.dumps(['thumbnail', {
+                'media': {
+                    'id': media.id,
+                    'thumbnail': media.thumbnail.url if media.thumbnail else None,
+                }
+            }
+        ])})
 
     @classmethod
     def process(cls, media):

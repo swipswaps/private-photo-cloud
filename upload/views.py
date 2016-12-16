@@ -26,7 +26,7 @@ def uploaded_media2dict(media):
         {
             'id': media.id,
             # Exclamation mark would indicate that there is no thumbnail yet
-            'thumbnail': media.thumbnail.url if media.thumbnail else f'!{media.default_thumbnail_url}',
+            'thumbnail': media.thumbnail.url if media.thumbnail else '!',
         }
     }
 

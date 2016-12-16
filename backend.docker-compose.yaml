@@ -23,12 +23,14 @@ services:
     links:
       - postgres
       - redis
-    environment:
+    environment: &BACKEND_ENV
       PYTHONUNBUFFERED: 1
       PYTHONIOENCODING: utf-8
       PYTHONDONTWRITEBYTECODE: 1
       PYTHONWARNINGS: all
       DATABASE_URL: postgres://user:password@postgres/app
+      CHANNEL_REDIS_HOST: redis
+      CHANNEL_REDIS_PORT: 6379
       CACHE_URL: redis://redis:6379/0?timeout=300
       CACHE_PERSISTENT_URL: redis://redis:6379/1
       EMAIL_URL: console://
@@ -60,17 +62,8 @@ services:
     ports: []
     user: nobody
     environment:
-      PYTHONUNBUFFERED: 1
-      PYTHONIOENCODING: utf-8
-      PYTHONDONTWRITEBYTECODE: 1
-      PYTHONWARNINGS: all
-      DATABASE_URL: postgres://user:password@postgres/app
-      CACHE_URL: redis://redis:6379/0?timeout=300
-      CACHE_PERSISTENT_URL: redis://redis:6379/1
-      CELERY_BROKER_URL: redis://redis/2
-# Do not store results of Celery tasks
-      # CELERY_RESULT_URL: redis://redis/3
-      DJANGO_SETTINGS_MODULE: private_photo_cloud.settings.default
+      <<: *BACKEND_ENV
+      DJANGO_DEBUG: 0
     command:
       - celery
       - -A
@@ -78,3 +71,4 @@ services:
       - worker
       - --loglevel=INFO
       - --concurrency=4
+# TODO: Consider adding separate asgi worker https://channels.readthedocs.io/en/stable/deploying.html#running-asgi-alongside-wsgi

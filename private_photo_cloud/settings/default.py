@@ -31,7 +31,20 @@ INSTALLED_APPS = [
     'storage',
     'upload',
     'catalog',
+    'channels',
 ]
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "asgi_redis.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                (os.environ.get('CHANNEL_REDIS_HOST'), int(os.environ.get('CHANNEL_REDIS_PORT')))
+            ],
+        },
+        "ROUTING": "private_photo_cloud.routing.channel_routing",
+    },
+}
 
 # Celery settings
 
