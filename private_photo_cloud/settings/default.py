@@ -9,7 +9,8 @@ DEBUG = (os.environ.get('DJANGO_DEBUG') == '1')
 TEMPLATES[0]['OPTIONS']['debug'] = (os.environ.get('DJANGO_TEMPLATE_DEBUG') == '1')
 
 
-DATABASES['default'] = dj_database_url.config(conn_max_age=600)
+# TODO: Investigate why connections leak with PostgreSQL-alpine + Python 3.6.0rc1 + Django pre-1.11: conn_max_age=600
+DATABASES['default'] = dj_database_url.config()
 
 CACHES = {
     'default': django_cache_url.config(),
