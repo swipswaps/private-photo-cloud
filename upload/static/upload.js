@@ -142,6 +142,9 @@ let BYTES_RANGES = [
 
 function bytes2text(bytes_num) {
     let num = bytes_num;
+    if(isNaN(num)) {
+        num = 0;
+    }
     let level = 0;
     while(num > 1000) {
         level += 1;
