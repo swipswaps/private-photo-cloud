@@ -513,7 +513,10 @@ class ClassifyMediaState(MediaState):
     @classmethod
     def process(cls, media):
         """Classify the media"""
-        from classification import group_media_into_shot
+        from classification import group_media_into_shot, media_categories
+
+        media.categories = list(media_categories.get(media=media))
+
         group_media_into_shot.process(media_id=media.pk, session_id=media.session_id)
 
         # TODO: Add more classification

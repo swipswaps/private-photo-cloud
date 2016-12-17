@@ -4,7 +4,7 @@ import os
 
 import logging
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField
+from django.contrib.postgres.fields import JSONField, ArrayField
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
@@ -56,18 +56,6 @@ class Shot(ShotConstMixin, models.Model):
 
 
 class Media(MediaConstMixin, models.Model):
-    MEDIA_IMAGE = 1
-    MEDIA_VIDEO = 2
-    MEDIA_OTHER = 3
-
-    MEDIA_TYPES = (
-        (MEDIA_IMAGE, _('Image')),
-        (MEDIA_VIDEO, _('Video')),
-        (MEDIA_OTHER, _('Other')),
-    )
-
-    SHOT_SEQUENCE_NAME = 'media_shot'
-
     def generate_content_filename(instance, filename):
         if instance.show_at and instance.content_extension:
             return 'content/{0.uploader_id}/{0.show_at:%Y%m}/{0.sha1_hex}_{0.size_bytes}{0.content_extension}'.format(
@@ -87,7 +75,7 @@ class Media(MediaConstMixin, models.Model):
     )
     session_id = models.UUIDField()
     # shot = models.ForeignKey(Shot, on_delete=models.CASCADE, null=True)
-    media_type = models.IntegerField(choices=MEDIA_TYPES, null=True)
+    media_type = models.IntegerField(choices=MediaConstMixin.MEDIA_TYPES, null=True)
 
     shot_at = models.DateTimeField(null=True)
     # date to me used to show in catalog and to store files; it is a fallback if failed to extract real shot_at date
@@ -110,6 +98,8 @@ class Media(MediaConstMixin, models.Model):
     )
 
     # is_default = models.BooleanField(default=False)
+
+    categories = ArrayField(models.IntegerField(), blank=True, default=list)
 
     processing_state_code = models.IntegerField(default=InitialMediaState.STATE_CODE)
 
@@ -203,6 +193,13 @@ class Media(MediaConstMixin, models.Model):
         # Run all processing in background
         process_media_state.delay(instance.pk)
 
+    # TODO: Cache
+    @classmethod
+    def categories_w_count(cls, uploader=None):
+        return [
+            (c_id, c_name, Media.objects.filter(uploader=uploader, categories__contains=[c_id]).count())
+            for c_id, c_name in cls.CATEGORIES
+        ]
 
 # We must make it static after initialization, otherwise methods would not work in FileField
 Media.generate_content_filename = staticmethod(Media.generate_content_filename)

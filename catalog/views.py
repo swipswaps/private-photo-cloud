@@ -8,7 +8,9 @@ from storage.models import Media
 
 @login_required
 def catalog(request):
-    return TemplateResponse(request, "catalog.html")
+    return TemplateResponse(request, "catalog.html", {
+        'categories': sorted(Media.categories_w_count(uploader=request.user)),
+    })
 
 
 # date_trunc('{field}', {source})

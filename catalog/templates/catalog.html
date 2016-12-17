@@ -13,6 +13,14 @@
 <body>
 <h1>Catalog</h1>
 
+<h2>By categories</h2>
+<ul id="categories">
+	{% for category_id, category, num in categories %}
+        <li><a href="#{{ category_id }}">{{ category }}</a>: {{ num }}</li>
+	{% endfor %}
+</ul>
+
+<h2>By date</h2>
 <div id="months"></div>
 
 <div id="media"></div>
