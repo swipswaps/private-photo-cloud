@@ -26,6 +26,6 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^upload/', include('upload.urls', namespace='upload')),
 
-    url(r'^', include('catalog.urls')),
+    url(r'^', include('catalog.urls', namespace='catalog')),
 
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
