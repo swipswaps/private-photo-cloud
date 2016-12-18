@@ -1,7 +1,6 @@
 import re
 
-from django.db import ProgrammingError
-from django.db import connection
+from django.db import IntegrityError, ProgrammingError, connection
 
 RE_SEQUENCE = re.compile(r'^[a-z0-9_-]+$')
 
@@ -17,6 +16,10 @@ def get_next_value(sequence_name):
         try:
             inner()
         except ProgrammingError:
-            cursor.execute(f"CREATE SEQUENCE {sequence_name}")
+            try:
+                cursor.execute(f"CREATE SEQUENCE {sequence_name}")
+            except IntegrityError:
+                # Race condition -- another process already created the sequence
+                pass
             inner()
         return cursor.fetchone()[0]
