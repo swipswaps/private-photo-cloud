@@ -9,6 +9,7 @@ import tempfile
 from celery import shared_task
 
 from PIL import Image
+from django.core.files import File
 from django.core.files.uploadedfile import TemporaryUploadedFile, SimpleUploadedFile
 from django.utils import timezone
 
@@ -422,7 +423,8 @@ class ScreenshotMediaState(MediaState):
             with Image.open(screenshot_raw) as image:
                 image.save(screenshot, **cls.SCREENSHOT_SETTINGS)
 
-        media.screenshot = screenshot
+        # Don't use screenshot directly since it would be deleted before closing, making TempFile crash
+        media.screenshot = File(screenshot)
 
 
 class ThumbnailMediaState(MediaState):
