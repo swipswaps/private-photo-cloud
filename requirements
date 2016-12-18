@@ -2,7 +2,7 @@
 
 #Django==1.11              # web framework, last stable version
 # Use latest from master, i.e. pre-1.11
-https://github.com/django/django/archive/e5d3f98abcdc20d64d99609bd0aa82331835b439.tar.gz
+https://github.com/django/django/archive/e2112a5e1af001449f0d1c183261369f00e93195.tar.gz
 
 six==1.10.0                 # core for py2+3 <- Django
 pytz==2016.10               # timezones for Python <- Django
