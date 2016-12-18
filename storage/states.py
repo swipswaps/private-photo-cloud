@@ -32,6 +32,9 @@ def process_media_state(media_id):
     media.processing_state.run(media)
 
 
+# TODO: Have separate task for every processing -- to have reasonable tasks names, not single entry point
+
+
 class MediaState:
     STATE_CODE = None
 
