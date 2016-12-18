@@ -42,6 +42,7 @@ services:
       DJANGO_SETTINGS_MODULE: private_photo_cloud.settings.default
       DJANGO_DEBUG: 1
       DJANGO_TEMPLATE_DEBUG: 1
+      DJANGO_WS_PORT: 8001
     volumes:
       - .:/home/app
       - ./media:/home/app/media
@@ -73,4 +74,33 @@ services:
       - worker
       - --loglevel=INFO
       - --concurrency=4
-# TODO: Consider adding separate asgi worker https://channels.readthedocs.io/en/stable/deploying.html#running-asgi-alongside-wsgi
+# separate instance for websockets
+  websockets:
+    <<: *BACKEND
+    ports:
+      - 8001:8001
+    user: nobody
+    environment:
+      <<: *BACKEND_ENV
+      DJANGO_DEBUG: 0
+    command:
+      - daphne
+      - -b
+      - 0.0.0.0
+      - -p
+      - "8001"
+      - private_photo_cloud.asgi:channel_layer
+  webworker:
+    <<: *BACKEND
+    ports: []
+    user: nobody
+    environment:
+      <<: *BACKEND_ENV
+      DJANGO_DEBUG: 0
+      ENABLE_CHANNELS: 1
+      PYTHONWARNINGS: once
+    restart: unless-stopped
+    command:
+      - ./manage.py
+      - runworker
+      - --only-channels=websocket.*

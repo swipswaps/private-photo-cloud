@@ -4,11 +4,12 @@
 	<meta charset="utf-8" />
 	<title>Upload</title>
 	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}upload.css" />
-	<script src="{{ STATIC_URL }}upload.js"></script>
-	<script>
+	<script>{# that must go BEFORE upload.js #}
 		window.UPLOAD_SESSION_ID = "{{ UPLOAD_SESSION_ID|escapejs }}";
 		window.PLACEHOLDER_IMAGE_SRC = "{{ STATIC_URL|escapejs }}placeholder.svg";
+		window.WEBSOCKET_URL = "ws://{{ WEBSOCKET_URL|escapejs }}";
 	</script>
+	<script src="{{ STATIC_URL }}upload.js"></script>
 </head>
 <body>
 <h1>Upload</h1>

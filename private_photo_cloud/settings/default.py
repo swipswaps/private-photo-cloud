@@ -31,11 +31,17 @@ INSTALLED_APPS = [
     'storage',
     'upload',
     'catalog',
-    'channels',
 ]
+
+if os.environ.get('ENABLE_CHANNELS') == '1':
+    INSTALLED_APPS += [
+        'channels', # enable it ONLY for runworker -- process websockets messages received with daphne.
+                    # if we enable it for main upload dispatching -- it is slow and cannot handle huge files
+    ]
 
 CHANNEL_LAYERS = {
     "default": {
+#        "BACKEND": "asgi_ipc.IPCChannelLayer",  # it is incredibly slow
         "BACKEND": "asgi_redis.RedisChannelLayer",
         "CONFIG": {
             "hosts": [
@@ -130,3 +136,5 @@ LOGGING = {
         },
     }
 }
+
+WS_PORT = int(os.environ.get('DJANGO_WS_PORT') or '80', 10)

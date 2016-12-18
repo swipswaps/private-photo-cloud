@@ -708,7 +708,7 @@ function fetch_w_progress(url, settings, onprogress) {
 window.addEventListener("DOMContentLoaded", initUpload, true);
 
 // inform about uploads
-let socket = new WebSocket("ws://" + window.location.host);
+let socket = new WebSocket(window.WEBSOCKET_URL);
 
 socket.onmessage = function (e) {
     let data = JSON.parse(e.data);
