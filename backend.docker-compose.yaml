@@ -59,7 +59,7 @@ services:
         done;
         ./manage.py migrate;
         ./manage.py shell -c 'from django.contrib.auth.models import User; u, _ = User.objects.get_or_create(username="admin", is_superuser=True, is_staff=True, is_active=True);u.set_password("password");u.save();';
-        exec ./manage.py runserver 0.0.0.0:80
+        exec ./manage.py runserver 0.0.0.0:80 --noasgi;
   worker:
     <<: *BACKEND
     ports: []
@@ -78,6 +78,8 @@ services:
   websockets:
     <<: *BACKEND
     ports:
+    # An alternative for separate port is to place nginx proxy in front of both runserver and daphne
+    # See https://channels.readthedocs.io/en/stable/deploying.html#running-asgi-alongside-wsgi
       - 8001:8001
     user: nobody
     environment:
@@ -97,10 +99,11 @@ services:
     environment:
       <<: *BACKEND_ENV
       DJANGO_DEBUG: 0
-      ENABLE_CHANNELS: 1
+# it got reloaded often and show warning too -> do not repeat
       PYTHONWARNINGS: once
     restart: unless-stopped
     command:
       - ./manage.py
       - runworker
+# listen only websockets, ignore HTTP (while served by another instance)
       - --only-channels=websocket.*

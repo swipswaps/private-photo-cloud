@@ -31,13 +31,8 @@ INSTALLED_APPS = [
     'storage',
     'upload',
     'catalog',
+    'channels', # we must disable ASGI for main upload flow and use it for WebSockets only (slow, no huge files)
 ]
-
-if os.environ.get('ENABLE_CHANNELS') == '1':
-    INSTALLED_APPS += [
-        'channels', # enable it ONLY for runworker -- process websockets messages received with daphne.
-                    # if we enable it for main upload dispatching -- it is slow and cannot handle huge files
-    ]
 
 CHANNEL_LAYERS = {
     "default": {
