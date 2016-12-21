@@ -2,7 +2,7 @@
 
 #Django==1.11              # web framework, last stable version
 # Use latest from master, i.e. pre-1.11
-https://github.com/django/django/archive/e2112a5e1af001449f0d1c183261369f00e93195.tar.gz
+https://github.com/django/django/archive/a04e795667afb046be5a347e8da8ab3e2793052a.tar.gz
 
 six==1.10.0                 # core for py2+3 <- Django
 pytz==2016.10               # timezones for Python <- Django
@@ -23,6 +23,7 @@ Pillow==3.4.2               # image processing library
 
 # Enable upstream once fixed on Alpine
 # python-magic==0.4.12        # recognize content type by content
+#https://github.com/ahupp/python-magic/archive/master.tar.gz
 https://github.com/krallin/python-magic/tarball/978ae95d5cb96852407c4e7916ebe3c59d06b05c
 
 celery==4.0.2               # background worker
