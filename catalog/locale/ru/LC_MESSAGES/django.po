@@ -1,0 +1,166 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-12-22 22:59+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: ru\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
+
+#: const.py:3
+msgctxt "month"
+msgid "January"
+msgstr "Январь"
+
+#: const.py:4
+msgctxt "month"
+msgid "February"
+msgstr "Февраль"
+
+#: const.py:5
+msgctxt "month"
+msgid "March"
+msgstr "Март"
+
+#: const.py:6
+msgctxt "month"
+msgid "April"
+msgstr "Апрель"
+
+#: const.py:7
+msgctxt "month"
+msgid "May"
+msgstr "Мая"
+
+#: const.py:8
+msgctxt "month"
+msgid "June"
+msgstr "Июнь"
+
+#: const.py:9
+msgctxt "month"
+msgid "July"
+msgstr "Июль"
+
+#: const.py:10
+msgctxt "month"
+msgid "August"
+msgstr "Август"
+
+#: const.py:11
+msgctxt "month"
+msgid "September"
+msgstr "Сентябрь"
+
+#: const.py:12
+msgctxt "month"
+msgid "October"
+msgstr "Октябрь"
+
+#: const.py:13
+msgctxt "month"
+msgid "November"
+msgstr "Ноябрь"
+
+#: const.py:14
+msgctxt "month"
+msgid "December"
+msgstr "Декабрь"
+
+#: const.py:16
+msgctxt "of month"
+msgid "January"
+msgstr "Января"
+
+#: const.py:17
+msgctxt "of month"
+msgid "February"
+msgstr "Февраля"
+
+#: const.py:18
+msgctxt "of month"
+msgid "March"
+msgstr "Марта"
+
+#: const.py:19
+msgctxt "of month"
+msgid "April"
+msgstr "Апреля"
+
+#: const.py:20
+msgctxt "of month"
+msgid "May"
+msgstr "Мая"
+
+#: const.py:21
+msgctxt "of month"
+msgid "June"
+msgstr "Июня"
+
+#: const.py:22
+msgctxt "of month"
+msgid "July"
+msgstr "Июля"
+
+#: const.py:23
+msgctxt "of month"
+msgid "August"
+msgstr "Августа"
+
+#: const.py:24
+msgctxt "of month"
+msgid "September"
+msgstr "Сентября"
+
+#: const.py:25
+msgctxt "of month"
+msgid "October"
+msgstr "Октября"
+
+#: const.py:26
+msgctxt "of month"
+msgid "November"
+msgstr "Ноября"
+
+#: const.py:27
+msgctxt "of month"
+msgid "December"
+msgstr "Декабря"
+
+#: const.py:29
+msgid "Monday"
+msgstr "Понедельник"
+
+#: const.py:30
+msgid "Tuesday"
+msgstr "Вторник"
+
+#: const.py:31
+msgid "Wednesday"
+msgstr "Среда"
+
+#: const.py:32
+msgid "Thursday"
+msgstr "Четверг"
+
+#: const.py:33
+msgid "Friday"
+msgstr "Пятница"
+
+#: const.py:34
+msgid "Saturday"
+msgstr "Суббота"
+
+#: const.py:35
+msgid "Sunday"
+msgstr "Воскресенье"

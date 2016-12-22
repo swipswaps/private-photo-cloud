@@ -1,0 +1,134 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-12-22 22:59+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: const.py:9
+msgid "Photo"
+msgstr ""
+
+#: const.py:10 const.py:57 const.py:87
+msgid "Video"
+msgstr ""
+
+#: const.py:18
+msgid "Landscape"
+msgstr ""
+
+#: const.py:19
+msgid "Portrait"
+msgstr ""
+
+#: const.py:20
+msgid "Square"
+msgstr ""
+
+#: const.py:28
+msgid "16:9"
+msgstr ""
+
+#: const.py:29
+msgid "4:3"
+msgstr ""
+
+#: const.py:30
+msgid "1:1"
+msgstr ""
+
+#: const.py:31 const.py:58
+msgid "Other"
+msgstr ""
+
+#: const.py:46
+msgid "Raw"
+msgstr ""
+
+#: const.py:47
+msgid "Original"
+msgstr ""
+
+#: const.py:48
+msgid "Processed"
+msgstr ""
+
+#: const.py:56 const.py:82
+msgid "Image"
+msgstr ""
+
+#: const.py:83
+msgid "Selfie"
+msgstr ""
+
+#: const.py:84
+msgid "Parnorama"
+msgstr ""
+
+#: const.py:85
+msgid "Burst"
+msgstr ""
+
+#: const.py:86
+msgid "Screenshot"
+msgstr ""
+
+#: const.py:88
+msgid "Interval video"
+msgstr ""
+
+#: const.py:89
+msgid "Slo-mo video"
+msgstr ""
+
+#: const.py:90
+msgid "Widescreen video"
+msgstr ""
+
+#: const.py:91
+msgid "Not image or video"
+msgstr ""
+
+#: const.py:92
+msgid "Portrait media"
+msgstr ""
+
+#: const.py:93
+msgid "Landscape media"
+msgstr ""
+
+#: const.py:94
+msgid "Square media"
+msgstr ""
+
+#: models.py:35 models.py:74
+msgid "User that uploaded the media. He owns it."
+msgstr ""
+
+#: models.py:85
+msgid "Width for use"
+msgstr ""
+
+#: models.py:86
+msgid "Height for use"
+msgstr ""
+
+#: models.py:97
+msgid "How much content data need to be rotated to get correct orientation"
+msgstr ""
+
+#: models.py:118
+msgid "Image taken from the video, sized 1:1 to rotated video"
+msgstr ""
