@@ -28,10 +28,23 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'channels', # we must disable ASGI for main upload flow and use it for WebSockets only (slow, no huge files)
+
     'storage',
     'upload',
     'catalog',
-    'channels', # we must disable ASGI for main upload flow and use it for WebSockets only (slow, no huge files)
+]
+
+MIDDLEWARE = [
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',    # Recognize and switch language by request headers
 ]
 
 CHANNEL_LAYERS = {
