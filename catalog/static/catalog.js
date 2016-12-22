@@ -188,6 +188,9 @@ function showMedia($media) {
         inner = `<a href="${MEDIA_URL + media.content}">Download ${escapeHTML(media.source_filename)}</a>`;
     }
 
+    // TODO: Hide popup if [Esc] was pressed.
+    // TODO: For images -- go to the next media when clicked on image itself.
+
     for(let $popup of document.querySelectorAll('.popup-media')) {
         // TODO: Stop and delete video tags
         $popup.remove();
