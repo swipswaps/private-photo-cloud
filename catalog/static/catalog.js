@@ -47,6 +47,8 @@ function formatDay(text) {
 }
 
 function renderMonth(month) {
+    let $month_container = document.createElement('div');
+
     let $month_div = document.createElement('div');
     $month_div.classList.add('show-month');
     $month_div.innerText = formatMonth(month);
@@ -56,8 +58,11 @@ function renderMonth(month) {
 
     $month_div.addEventListener('click', toggleMonth.bind(null, month, $month_div, $month_images), false);
 
-    $month_div.appendChild($month_images);
-    return $month_div;
+    $month_container.appendChild($month_div);
+    $month_container.appendChild($month_images);
+
+    return $month_container;
+
 }
 
 function toggleMonth(month, $month_div, $month_images) {
