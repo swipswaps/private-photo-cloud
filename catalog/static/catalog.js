@@ -22,10 +22,34 @@ function renderMonths(dates) {
     }
 }
 
+const MONTHS = [null, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
+                'November', 'December'];
+
+const DAY_OF_WEEK = [null, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+function formatMonth(text) {
+    text = text.split('-').map(n => Number.parseInt(n));
+    let year = text[0];
+    let month = text[1];
+
+    return `${pgettext('month', MONTHS[month])} ${year}`;
+}
+
+function formatDay(text) {
+    let date = text.split('-').map(n => Number.parseInt(n));
+    let year = date[0];
+    let month = date[1];
+    let day = date[2];
+
+    let day_of_week = (new Date(text)).getDay() || 7;
+
+    return `${day} ${pgettext('of month', MONTHS[month])} ${year}, ${gettext(DAY_OF_WEEK[day_of_week])}`;
+}
+
 function renderMonth(month) {
     let $month_div = document.createElement('div');
     $month_div.classList.add('show-month');
-    $month_div.innerText = month;
+    $month_div.innerText = formatMonth(month);
 
     let $month_images = document.createElement('div');
     $month_images.classList.add('images');
@@ -55,10 +79,9 @@ function loadMonth(month, container) {
 }
 
 function renderDayContainer(day) {
-    // TODO: Format date into human-readable format: 1 Мая 2016, Понедельник
     return renderElement(`
         <div class="date-container">
-            <div class="day-title">${day}</div>
+            <div class="day-title">${formatDay(day)}</div>
         </div>
     `);
 }
