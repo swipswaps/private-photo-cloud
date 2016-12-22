@@ -4,6 +4,7 @@
 	<meta charset="utf-8" />
 	<title>Catalog</title>
 	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}catalog.css" />
+	<script type="text/javascript" src="{% url 'javascript-catalog' %}"></script>
 	<script src="{{ STATIC_URL }}catalog.js"></script>
 	<script>
 		const MEDIA_URL = '{{ MEDIA_URL|escapejs }}';

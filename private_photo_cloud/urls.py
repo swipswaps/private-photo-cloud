@@ -18,13 +18,16 @@ from django.contrib import admin
 from django.contrib.auth.views import LoginView, LogoutView
 from django.conf import settings
 from django.conf.urls.static import static
-
+from django.views.i18n import JavaScriptCatalog
 
 urlpatterns = [
     url(r'^login/', LoginView.as_view(), name='login'),
     url(r'^logout/', LogoutView.as_view(), name='logout'),
     url(r'^admin/', admin.site.urls),
     url(r'^upload/', include('upload.urls', namespace='upload')),
+
+    # Override domain to use the same django.po file, not djangojs.po
+    url(r'^jsi18n/$', JavaScriptCatalog.as_view(domain='django'), name='javascript-catalog'),
 
     url(r'^', include('catalog.urls', namespace='catalog')),
 
