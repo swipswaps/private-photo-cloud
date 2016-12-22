@@ -26,6 +26,7 @@ urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^upload/', include('upload.urls', namespace='upload')),
 
+    # TODO: Generate PO files out of JS files, use package translations, use i18n in JS
     # Override domain to use the same django.po file, not djangojs.po
     url(r'^jsi18n/$', JavaScriptCatalog.as_view(domain='django'), name='javascript-catalog'),
 
