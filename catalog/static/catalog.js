@@ -23,21 +23,35 @@ function renderMonths(dates) {
 }
 
 function renderMonth(month) {
-    let div = document.createElement('div');
-    div.classList.add('show-month');
-    div.innerText = month;
-    div.addEventListener('click', function(e) {
-        loadMonth(month);
-    }, false);
-    return div;
+    let $month_div = document.createElement('div');
+    $month_div.classList.add('show-month');
+    $month_div.innerText = month;
+
+    let $month_images = document.createElement('div');
+    $month_images.classList.add('images');
+
+    $month_div.addEventListener('click', toggleMonth.bind(null, month, $month_div, $month_images), false);
+
+    $month_div.appendChild($month_images);
+    return $month_div;
 }
 
-function loadMonth(month) {
+function toggleMonth(month, $month_div, $month_images) {
+    $month_images.innerHTML = '';
+    if($month_images.classList.contains('expanded')) {
+        $month_images.classList.remove('expanded');
+    } else {
+        $month_images.classList.add('expanded');
+        loadMonth(month, $month_images);
+    }
+}
+
+function loadMonth(month, container) {
     fetch(`/images/${month}.json`, {
         credentials: 'same-origin',
     }).then(function(response){
         return response.json();
-    }).then(renderMonthMedia);
+    }).then(renderMonthMedia.bind(null, container));
 }
 
 function renderDayContainer(day) {
@@ -52,9 +66,7 @@ function renderDayContainer(day) {
 const MEDIA_TYPES = [null, 'media_image', 'media_video', 'media_other'];
 
 
-function renderMonthMedia(medias) {
-    let container = document.getElementById('media');
-    // erase content
+function renderMonthMedia(container, medias) {
     container.innerHTML = '';
 
     if(!medias.media.length) {
