@@ -22,17 +22,58 @@ function renderMonths(dates) {
     }
 }
 
-const MONTHS = [null, 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
-                'November', 'December'];
+window.pgettext = window.pgettext || function(){};
+window.gettext = window.gettext || function(){};
 
-const DAY_OF_WEEK = [null, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const MONTHS = [
+    null,
+    pgettext('month', 'January'),
+    pgettext('month', 'February'),
+    pgettext('month', 'March'),
+    pgettext('month', 'April'),
+    pgettext('month', 'May'),
+    pgettext('month', 'June'),
+    pgettext('month', 'July'),
+    pgettext('month', 'August'),
+    pgettext('month', 'September'),
+    pgettext('month', 'October'),
+    pgettext('month', 'November'),
+    pgettext('month', 'December')
+];
+
+const MONTHS_OF = [
+    null,
+    pgettext('of month', 'January'),
+    pgettext('of month', 'February'),
+    pgettext('of month', 'March'),
+    pgettext('of month', 'April'),
+    pgettext('of month', 'May'),
+    pgettext('of month', 'June'),
+    pgettext('of month', 'July'),
+    pgettext('of month', 'August'),
+    pgettext('of month', 'September'),
+    pgettext('of month', 'October'),
+    pgettext('of month', 'November'),
+    pgettext('of month', 'December')
+];
+
+const DAY_OF_WEEK = [
+    null,
+    gettext('Monday'),
+    gettext('Tuesday'),
+    gettext('Wednesday'),
+    gettext('Thursday'),
+    gettext('Friday'),
+    gettext('Saturday'),
+    gettext('Sunday')
+];
 
 function formatMonth(text) {
     text = text.split('-').map(n => Number.parseInt(n));
     let year = text[0];
     let month = text[1];
 
-    return `${pgettext('month', MONTHS[month])} ${year}`;
+    return `${MONTHS[month]} ${year}`;
 }
 
 function formatDay(text) {
@@ -43,7 +84,7 @@ function formatDay(text) {
 
     let day_of_week = (new Date(text)).getDay() || 7;
 
-    return `${day} ${pgettext('of month', MONTHS[month])} ${year}, ${gettext(DAY_OF_WEEK[day_of_week])}`;
+    return `${day} ${MONTHS_OF[month]} ${year}, ${DAY_OF_WEEK[day_of_week]}`;
 }
 
 function renderMonth(month) {

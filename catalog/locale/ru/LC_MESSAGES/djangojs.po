@@ -3,164 +3,165 @@
 # This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
+#, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-12-22 22:59+0000\n"
+"POT-Creation-Date: 2016-12-23 20:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: ru\n"
+"Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=4; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: const.py:3
+#: static/catalog.js:30
 msgctxt "month"
 msgid "January"
 msgstr "Январь"
 
-#: const.py:4
+#: static/catalog.js:31
 msgctxt "month"
 msgid "February"
 msgstr "Февраль"
 
-#: const.py:5
+#: static/catalog.js:32
 msgctxt "month"
 msgid "March"
 msgstr "Март"
 
-#: const.py:6
+#: static/catalog.js:33
 msgctxt "month"
 msgid "April"
 msgstr "Апрель"
 
-#: const.py:7
+#: static/catalog.js:34
 msgctxt "month"
 msgid "May"
-msgstr "Мая"
+msgstr "Май"
 
-#: const.py:8
+#: static/catalog.js:35
 msgctxt "month"
 msgid "June"
 msgstr "Июнь"
 
-#: const.py:9
+#: static/catalog.js:36
 msgctxt "month"
 msgid "July"
 msgstr "Июль"
 
-#: const.py:10
+#: static/catalog.js:37
 msgctxt "month"
 msgid "August"
 msgstr "Август"
 
-#: const.py:11
+#: static/catalog.js:38
 msgctxt "month"
 msgid "September"
 msgstr "Сентябрь"
 
-#: const.py:12
+#: static/catalog.js:39
 msgctxt "month"
 msgid "October"
 msgstr "Октябрь"
 
-#: const.py:13
+#: static/catalog.js:40
 msgctxt "month"
 msgid "November"
 msgstr "Ноябрь"
 
-#: const.py:14
+#: static/catalog.js:41
 msgctxt "month"
 msgid "December"
 msgstr "Декабрь"
 
-#: const.py:16
+#: static/catalog.js:46
 msgctxt "of month"
 msgid "January"
 msgstr "Января"
 
-#: const.py:17
+#: static/catalog.js:47
 msgctxt "of month"
 msgid "February"
 msgstr "Февраля"
 
-#: const.py:18
+#: static/catalog.js:48
 msgctxt "of month"
 msgid "March"
 msgstr "Марта"
 
-#: const.py:19
+#: static/catalog.js:49
 msgctxt "of month"
 msgid "April"
 msgstr "Апреля"
 
-#: const.py:20
+#: static/catalog.js:50
 msgctxt "of month"
 msgid "May"
 msgstr "Мая"
 
-#: const.py:21
+#: static/catalog.js:51
 msgctxt "of month"
 msgid "June"
 msgstr "Июня"
 
-#: const.py:22
+#: static/catalog.js:52
 msgctxt "of month"
 msgid "July"
 msgstr "Июля"
 
-#: const.py:23
+#: static/catalog.js:53
 msgctxt "of month"
 msgid "August"
 msgstr "Августа"
 
-#: const.py:24
+#: static/catalog.js:54
 msgctxt "of month"
 msgid "September"
 msgstr "Сентября"
 
-#: const.py:25
+#: static/catalog.js:55
 msgctxt "of month"
 msgid "October"
 msgstr "Октября"
 
-#: const.py:26
+#: static/catalog.js:56
 msgctxt "of month"
 msgid "November"
 msgstr "Ноября"
 
-#: const.py:27
+#: static/catalog.js:57
 msgctxt "of month"
 msgid "December"
 msgstr "Декабря"
 
-#: const.py:29
+#: static/catalog.js:62
 msgid "Monday"
 msgstr "Понедельник"
 
-#: const.py:30
+#: static/catalog.js:63
 msgid "Tuesday"
 msgstr "Вторник"
 
-#: const.py:31
+#: static/catalog.js:64
 msgid "Wednesday"
 msgstr "Среда"
 
-#: const.py:32
+#: static/catalog.js:65
 msgid "Thursday"
 msgstr "Четверг"
 
-#: const.py:33
+#: static/catalog.js:66
 msgid "Friday"
 msgstr "Пятница"
 
-#: const.py:34
+#: static/catalog.js:67
 msgid "Saturday"
 msgstr "Суббота"
 
-#: const.py:35
+#: static/catalog.js:68
 msgid "Sunday"
 msgstr "Воскресенье"
