@@ -30,6 +30,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'channels', # we must disable ASGI for main upload flow and use it for WebSockets only (slow, no huge files)
+    'rest_framework',
+    'crispy_forms',
 
     'storage',
     'upload',
@@ -146,3 +148,11 @@ LOGGING = {
 }
 
 WS_PORT = int(os.environ.get('DJANGO_WS_PORT') or '80', 10)
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated'
+    ],
+    'PAGE_SIZE': 100,
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+}

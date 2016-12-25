@@ -14,6 +14,7 @@ dj-email-url==0.0.10        # email config via URL
 djangorestframework==3.5.3  # REST framework
 Markdown==2.6.7             # for REST framework -- browsable API
 django-filter==1.0.1        # for REST framework -- filtering support
+django-crispy-forms==1.6.1  # for REST framework -- filter forms support
 
 psycopg2==2.6.2             # PostgreSQL connector
 django-redis==4.6.0         # django redis cache backend

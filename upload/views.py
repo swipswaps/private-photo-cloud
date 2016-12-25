@@ -23,6 +23,7 @@ def upload(request):
     })
 
 
+# TODO: Use MSerializer instead
 def uploaded_media2dict(media):
     return {'media':
         {

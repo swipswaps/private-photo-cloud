@@ -15,6 +15,7 @@ def catalog(request):
 
 # date_trunc('{field}', {source})
 
+# TODO: Migrate to view in REST Framework
 @login_required
 def images_months(request):
     qs = Media.objects.filter(uploader=request.user)
@@ -49,4 +50,5 @@ def images_for_month(request, year=None, month=None):
 
     qs = qs.filter(show_at__year=year, show_at__month=month)
 
+    # TODO: Use REST API /api/media/?show_year=year&show_month=month
     return JsonResponse({"media": list(qs.values(*MEDIA_FIELDS).order_by("show_at"))})

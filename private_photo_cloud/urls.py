@@ -11,6 +11,8 @@ urlpatterns = [
     url(r'^login/', LoginView.as_view(), name='login'),
     url(r'^logout/', LogoutView.as_view(), name='logout'),
 
+    url(r'^api/auth/', include('rest_framework.urls', namespace='rest_framework')),
+
     # JS translations (djangojs domain) -- for given package(s) only
     url(r'^jsi18n/(?P<packages>\S+?).js$', JavaScriptCatalog.as_view(), name='javascript-catalog'),
 
