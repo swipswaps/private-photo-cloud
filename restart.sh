@@ -1,3 +1,3 @@
-#!/bin/sh
+#!/bin/sh -e
 touch manage.py
-docker exec -ti privatephotocloud_worker_1 kill -HUP 1
+exec docker exec -ti privatephotocloud_worker_1 kill -HUP 1
