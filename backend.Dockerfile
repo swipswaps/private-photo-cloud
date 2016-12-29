@@ -3,7 +3,7 @@ FROM python:3.6-alpine
 RUN apk --no-cache upgrade\
  && PKG="gcc musl-dev"\
  && apk add --no-cache $PKG\
- && python -m pip install pip==9.0.1 setuptools==32.3.0\
+ && python -m pip install pip==9.0.1 setuptools==32.3.1\
  && python -m pip install dumb-init==1.2\
  && apk del $PKG
 
