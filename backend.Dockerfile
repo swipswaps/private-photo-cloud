@@ -15,4 +15,7 @@ RUN apk --no-cache upgrade\
  && python -m pip install --no-cache-dir -r /tmp/requirements\
  && apk del $PKG
 
+# Workaround for https://github.com/zopefoundation/zope.interface/issues/68
+RUN touch /usr/local/lib/python3.6/site-packages/zope/__init__.py
+
 ENTRYPOINT ["/usr/local/bin/dumb-init", "--verbose", "--single-child"]
