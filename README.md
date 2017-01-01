@@ -27,7 +27,7 @@ With this application you would be able to:
   * [PLANNED] Automatic grouping of images shot as about the same tim as a single shot-burst
 * TODO
 
-See <IDEAS.md>
+See [Ideas list](IDEAS.md)
 
 ## Ideal use case
 
