@@ -2,7 +2,7 @@
 
 #Django==1.11              # web framework, last stable version
 # Use latest from master, i.e. pre-1.11
-# b52c73008a9d67e9ddbb841872dc15cdd3d6ee01 breaks django_filter
+# 51cde873d9fc8e4540f4efecbd39cfe8e770be38 is last commit to work with django_filter
 https://github.com/django/django/archive/51cde873d9fc8e4540f4efecbd39cfe8e770be38.tar.gz
 
 six==1.10.0                 # core for py2+3 <- Django
