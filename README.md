@@ -27,6 +27,17 @@ With this application you would be able to:
   * [PLANNED] Automatic grouping of images shot as about the same tim as a single shot-burst
 * TODO
 
+See <IDEAS.md>
+
+## Ideal use case
+
+* Plug camera + open web site / run mobile app
+* Upload all photos and videos
+* Go to "Memories" list
+* Group memories, fine-tune them
+* See memories on mobile (app), desktop (browser) or TV
+* Print memories as photos or album
+
 ## Why
 
 * Web-based
