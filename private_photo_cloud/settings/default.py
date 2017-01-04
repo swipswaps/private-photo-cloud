@@ -72,6 +72,7 @@ CELERY_TASK_SERIALIZER = 'json'
 # Since auto-discovery crashes -- list all modules with tasks
 CELERY_IMPORTS = [
     'upload.tasks',
+    'storage.processing',
 ]
 
 
