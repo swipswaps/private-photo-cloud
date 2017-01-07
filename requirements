@@ -25,7 +25,8 @@ Pillow==4.0.0               # image processing library
 
 # Enable upstream once fixed on Alpine
 # python-magic==0.4.13        # recognize content type by content
-https://github.com/ahupp/python-magic/archive/master.tar.gz
+#https://github.com/ahupp/python-magic/archive/master.tar.gz
+https://github.com/krallin/python-magic/archive/master.tar.gz
 
 celery==4.0.2               # background worker
 billiard==3.5.0.2           # <- celery
