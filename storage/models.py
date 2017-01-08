@@ -10,9 +10,9 @@ from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
 from django.db.models.signals import post_save
 
+from processing.states import ProcessingState
 from storage.tools.sequence import get_next_value
 from .const import ShotConstMixin, MediaConstMixin
-from .states import MediaState, InitialMediaState, process_media_state
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +101,7 @@ class Media(MediaConstMixin, models.Model):
 
     categories = ArrayField(models.IntegerField(), blank=True, default=list)
 
-    processing_state_code = models.IntegerField(default=InitialMediaState.STATE_CODE)
+    processing_state_code = models.IntegerField(default=ProcessingState.STATE_INITIAL)
 
     mimetype = models.CharField(max_length=127)
     # workflow_type = models.IntegerField(null=True, blank=True, choices=MediaConstMixin.WORKFLOW_TYPES)
@@ -162,14 +162,8 @@ class Media(MediaConstMixin, models.Model):
 
     # /hashers properties
 
-    @property
-    def processing_state(self):
-        return MediaState.get_state(self.processing_state_code)
-
-    @processing_state.setter
-    def processing_state(self, value):
-        assert issubclass(value, MediaState), f'{value!r} must be instance of MediaState'
-        self.processing_state_code = value.STATE_CODE
+    def process(self):
+        ProcessingState.run(self.processing_state_code, self.id)
 
     @property
     def default_thumbnail_url(self):
@@ -188,10 +182,9 @@ class Media(MediaConstMixin, models.Model):
         self.content.name = content_suffix
 
     @classmethod
-    def process(cls, sender, instance, **kwargs):
-        # Somehow lambda does not work as listener for signals
-        # Run all processing in background
-        process_media_state.delay(instance.pk)
+    def post_save(cls, sender, instance, created, **kwargs):
+        if created:
+            instance.process()
 
     # TODO: Cache
     @classmethod
@@ -206,7 +199,7 @@ Media.generate_content_filename = staticmethod(Media.generate_content_filename)
 Media.generate_thumbnail_filename = staticmethod(Media.generate_thumbnail_filename)
 Media.generate_screenshot_filename = staticmethod(Media.generate_screenshot_filename)
 
-post_save.connect(Media.process, sender=Media)
+post_save.connect(Media.post_save, sender=Media)
 
 """
 Re-process not finished processes:

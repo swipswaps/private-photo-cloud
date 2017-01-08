@@ -5,12 +5,13 @@ State = namedtuple('State', ['code', 'task', 'command'])
 
 
 class ProcessingState:
+    # Use sparse codes to have chance to put anything between
     STATE_INITIAL = 0
-    STATE_BASE_METADATA = 1
-    STATE_QUICK_THUMBNAIL = 2
-    STATE_PLAY_MEDIA = 3
-    STATE_METADATA = 4
-    STATE_CATEGORIES = 5
+    STATE_BASE_METADATA = 5
+    STATE_QUICK_THUMBNAIL = 10
+    STATE_PLAY_MEDIA = 15
+    STATE_METADATA = 20
+    STATE_CATEGORIES = 25
 
     STATES = (
         State(STATE_INITIAL, 'processing.tasks.initial_state', None),
