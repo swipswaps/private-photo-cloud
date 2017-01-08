@@ -1,101 +1,48 @@
-from processing import tasks
+import pydoc
+from collections import namedtuple
+
+State = namedtuple('State', ['code', 'task', 'command'])
 
 
 class ProcessingState:
-    STATUS_CODE = None
-    NEXT_TASK = None
+    STATE_INITIAL = 0
+    STATE_BASE_METADATA = 1
+    STATE_QUICK_THUMBNAIL = 2
+    STATE_PLAY_MEDIA = 3
+    STATE_METADATA = 4
+    STATE_CATEGORIES = 5
+
+    STATES = (
+        State(STATE_INITIAL, 'processing.tasks.initial_state', None),
+        State(STATE_BASE_METADATA, 'processing.tasks.extract_base_metadata', 'processing.base_metadata.run'),
+        State(STATE_QUICK_THUMBNAIL, 'processing.tasks.generate_quick_thumbnail', 'processing.quick_thumbnail.run'),
+        State(STATE_PLAY_MEDIA, 'processing.tasks.generate_play', 'processing.play_media.run'),
+        State(STATE_METADATA, 'processing.tasks.calculate_metadata', 'processing.metadata.run'),
+        State(STATE_CATEGORIES, 'processing.tasks.categorize', 'processing.categories.run'),
+    )
 
     @classmethod
-    def run(cls, media_id):
+    def run(cls, state_code, media_id):
         from storage.models import Media
-        media = Media.objects.get(pk=media_id)
 
-        fn = cls.get_exec_method(media)
-        fn(media)
+        # create iterator to be able to find "next" state
+        states = iter(cls.STATES)
+        state = next((state for state in states if state.code == state_code), None)
+        next_state = next(states, None)
 
-        media.processing_state_code = cls.STATUS_CODE
-        media.save()
+        if not state:
+            raise NotImplementedError(state_code)
 
-        cls.run_next(media_id, media)
+        if state.command:
+            command = pydoc.locate(state.command)
 
-    @classmethod
-    def get_exec_method(cls, media):
-        raise NotImplementedError()
+            media = Media.objects.get(pk=media_id)
 
-    @classmethod
-    def run_next(cls, media_id, media):
-        next_task = cls.NEXT_TASK or cls.get_next(media_id, media)
+            command(media)
 
-        if next_task:
-            # Run next task asynchronously
-            next_task.delay(media_id)
+            media.processing_state_code = state.code
+            media.save()
 
-    @classmethod
-    def get_next(cls, media_id, media):
-        raise NotImplementedError()
-
-class InitialState(ProcessingState):
-    NEXT_TASK = tasks.extract_base_metadata
-    @classmethod
-    def run(cls, media_id):
-        cls.run_next(media_id, None)
-
-    @classmethod
-    def run_next(cls, media_id, media):
-        # Run immediately
-        cls.NEXT_TASK(media_id)
-
-
-class ExtractBaseMetadataState(ProcessingState):
-    STATUS_CODE = 1
-    NEXT_TASK = tasks.generate_quick_thumbnail
-
-    @classmethod
-    def get_exec_method(cls, media):
-        from processing.base_metadata import run
-        return run
-
-
-class GenerateQuickThumbnailState(ProcessingState):
-    STATUS_CODE = 2
-    NEXT_TASK = tasks.generate_play
-
-    @classmethod
-    def get_exec_method(cls, media):
-        from processing.quick_thumbnail import run
-        return run
-
-
-class GeneratePlayState(ProcessingState):
-    STATUS_CODE = 3
-    NEXT_TASK = tasks.calculate_metadata
-
-    @classmethod
-    def get_exec_method(cls, media):
-        from processing.play_media import run
-        return run
-
-
-class CalculateMetadataState(ProcessingState):
-    STATUS_CODE = 4
-    NEXT_TASK = tasks.categorize
-
-    @classmethod
-    def get_exec_method(clss, media):
-        from processing.metadata import run
-        return run
-
-
-class CategorizeState(ProcessingState):
-    STATUS_CODE = 5
-    NEXT_TASK = None
-
-    @classmethod
-    def get_next(cls, media_id, media):
-        # nothing to do next
-        return None
-
-    @classmethod
-    def get_exec_method(cls, media):
-        from processing.categories import run
-        return run
+        if next_state and next_state.task:
+            task = pydoc.locate(next_state.task)
+            task.delay(media_id)
