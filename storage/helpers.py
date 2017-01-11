@@ -4,6 +4,10 @@ def get_first_filled_value(values):
             return value
 
 
+def get_first_filled_key(data, keys):
+    return get_first_filled_value(data.get(k) for k in keys)
+
+
 def resolve_dict(path, data):
     """
     Resolve dict item by path (split by ':').
