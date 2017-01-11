@@ -4,49 +4,35 @@ from storage.const import MediaConstMixin
 from storage.helpers import get_first_filled_key
 
 
-class MimetypeByContent:
-    INPUT_FIELDS = ('content',)
+def MimetypeByContent(content=None):
+    import magic
 
-    @classmethod
-    def run(cls, content=None):
-        import magic
-
-        return 'mimetype', magic.from_file(content.path, mime=True)
+    return 'mimetype', magic.from_file(content.path, mime=True)
 
 
-class MediatypeByMimeType:
-    INPUT_FIELDS = ('mimetype',)
+def MediatypeByMimeType(mimetype=None):
+    mimetype = mimetype.split('/')[0]
 
-    @classmethod
-    def run(cls, mimetype=None):
-        mimetype = mimetype.split('/')[0]
+    TYPES = {
+        'image': MediaConstMixin.MEDIA_IMAGE,
+        'video': MediaConstMixin.MEDIA_VIDEO,
+    }
 
-        TYPES = {
-            'image': MediaConstMixin.MEDIA_IMAGE,
-            'video': MediaConstMixin.MEDIA_VIDEO,
-        }
-
-        return 'media_type', TYPES.get(mimetype, MediaConstMixin.MEDIA_OTHER)
+    return 'media_type', TYPES.get(mimetype, MediaConstMixin.MEDIA_OTHER)
 
 
-class ImageMetadataByContent:
-    INPUT_FIELDS = ('media_type', 'content')
+def ImageMetadataByContent(media_type=None, content=None):
+    from storage.tools.exiftool import get_exiftool_info
 
-    @classmethod
-    def run(cls, media_type=None, content=None):
-        from storage.tools.exiftool import get_exiftool_info
+    if media_type != MediaConstMixin.MEDIA_IMAGE:
+        return
 
-        if media_type != MediaConstMixin.MEDIA_IMAGE:
-            return
-
-        # Alternative: exiv2 (faster but less formats)
-        # See: http://dev.exiv2.org/projects/exiv2/wiki/How_does_Exiv2_compare_to_Exiftool
-        return 'metadata', get_exiftool_info(content.path)
+    # Alternative: exiv2 (faster but less formats)
+    # See: http://dev.exiv2.org/projects/exiv2/wiki/How_does_Exiv2_compare_to_Exiftool
+    return 'metadata', get_exiftool_info(content.path)
 
 
 class ImageMimetypeByMetadata:
-    INPUT_FIELDS = ('media_type', 'metadata')
-
     IMAGE_MIMETYPE_KEYS = (
         'File:MIMEType',
     )
@@ -60,7 +46,6 @@ class ImageMimetypeByMetadata:
 
 
 class ImageDegreeByMetadata:
-    INPUT_FIELDS = ('media_type', 'metadata')
     IMAGE_ORIENTATION_KEYS = (
         'EXIF:Orientation',
         'MakerNotes:CameraOrientation',
