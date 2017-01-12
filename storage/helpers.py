@@ -1,7 +1,10 @@
 def get_first_filled_value(values):
+    # loop works best on short sequence
     for value in values:
         if value:
             return value
+    # works better on long sequence
+    # return next(filter(None, values), None)
 
 
 def get_first_filled_key(data, keys):
