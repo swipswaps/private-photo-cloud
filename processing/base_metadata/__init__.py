@@ -12,40 +12,67 @@ PROCESSORS = (
     'processing.base_metadata.filetype.ImageMetadataByContent',
     'processing.base_metadata.filetype.ImageMimetypeByMetadata',
     'processing.base_metadata.filetype.ImageDegreeByMetadata.run',
+    'processing.base_metadata.save_media',
 )
 
 
-def get_media_by_id(media_id=None, FIELDS=None):
+def get_media_by_id(media_id=None, ARGS=None):
     from storage.models import Media
 
     # exclude arguments of this method
-    FIELDS = set(FIELDS) - {'media_id', 'FIELDS'}
+    ARGS = set(ARGS) - set(inspect.getfullargspec(get_media_by_id).args) - DataProcessor.ALL_ARGUMENTS
 
-    media = Media.objects.filter(id=media_id).only(*FIELDS).get()
+    media = Media.objects.filter(id=media_id).only(*ARGS).get()
+    media = {k: getattr(media, k) for k in ARGS}
 
-    for k in FIELDS:
-        yield k, getattr(media, k)
+    yield DataProcessor.INITIAL_STATE_ARG, media
+    yield from media.items()
+
+
+def save_media(ARGS=None, media_id=None, **kwargs):
+    from storage.models import Media
+
+    initial_state = kwargs.pop(DataProcessor.INITIAL_STATE_ARG)
+    data = {k: v for k, v in kwargs.items() if v is not initial_state.get(k)}
+
+    media = Media.objects.filter(id=media_id).only('id').get()
+
+    for k, v in data.items():
+        setattr(media, k, v)
+
+    media.save(update_fields=data)
+
+    return 'media', media
 
 
 class DataProcessor:
     PROCESSORS = ()
-    INPUT_FIELDS = ()
+    ARGS = ()
+    ALL_ARGUMENTS = {'ALL'}
+    INITIAL_STATE_ARG = 'INITIAL_STATE'
 
     def __init__(self, processors):
         # TODO: Maybe initialize once on application startup
-        self.PROCESSORS = [
-            (path, fn, set(inspect.getfullargspec(fn).args) - {'self', 'cls'})
-            for path, fn in ((p, pydoc.locate(p)) for p in processors)
-            ]
 
-        self.INPUT_FIELDS = {f for path, fn, fields in self.PROCESSORS for f in fields}
+        processors_fns = ((pydoc.locate(p), p) for p in processors)
+        processors_args = ( (inspect.getfullargspec(fn), fn, path) for fn, path in processors_fns)
+
+        self.PROCESSORS = [
+            (((set(args.args) - {'self', 'cls'}) if not args.varkw else self.ALL_ARGUMENTS), fn, path)
+            for args, fn, path in processors_args
+        ]
+
+        self.ARGS = {arg for args, fn, path in self.PROCESSORS for arg in args}
 
     def run(self, **kwargs):
-        data = {**kwargs, 'FIELDS': self.INPUT_FIELDS}
+        data = {**kwargs, 'ARGS': self.ARGS}
 
-        for path, fn, fields in self.PROCESSORS:
+        results = ()
+
+        for args, fn, path in self.PROCESSORS:
+            input_data = data if args is self.ALL_ARGUMENTS else {k: data[k] for k in args}
             try:
-                results = fn(**{k: data[k] for k in fields})
+                results = fn(**input_data)
 
                 if not results:
                     continue
@@ -60,12 +87,16 @@ class DataProcessor:
                 continue
 
             for k, v in results:
-                logger.info('%s: %s=%r', path, k, v)
+                if k != DataProcessor.INITIAL_STATE_ARG:
+                    logger.info('%s: %s=%r', path, k, v)
                 data[k] = v
 
-                # TODO: Save into media final result
+        # Return not all intermediary variables but result of last command
+        # If you want to -- you could make your last command to return all variables
+        return dict(results) if results else None
 
 
 def run(media_id=None):
     logger.info('extract base metadata for Media.id=%s', media_id)
-    DataProcessor(PROCESSORS).run(media_id=media_id)
+    result = DataProcessor(PROCESSORS).run(media_id=media_id)
+    logger.info('result: %r', result)
