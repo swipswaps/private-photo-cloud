@@ -9,12 +9,12 @@ PROCESSORS = (
     'processing.base_metadata.get_media_by_id',
     'processing.base_metadata.filetype.MimetypeByContent',
     'processing.base_metadata.filetype.MediatypeByMimeType',
-    'processing.base_metadata.filetype.ImageMetadataByContent',
-    'processing.base_metadata.filetype.ImageMimetypeByMetadata',
-    'processing.base_metadata.filetype.ImageDegreeByMetadata',
-    'processing.base_metadata.filetype.SizeCameraByMetadata',
-    'processing.base_metadata.filetype.DateBySource',
-    'processing.base_metadata.filetype.DateByMetadata',
+    'processing.base_metadata.image_base_metadata.MetadataByContent',
+    'processing.base_metadata.image_base_metadata.MimetypeByMetadata',
+    'processing.base_metadata.image_base_metadata.DegreeByMetadata',
+    'processing.base_metadata.image_base_metadata.SizeCameraByMetadata',
+    'processing.base_metadata.image_base_metadata.DateBySource',
+    'processing.base_metadata.image_base_metadata.DateByMetadata',
     'processing.base_metadata.save_media',
 )
 
