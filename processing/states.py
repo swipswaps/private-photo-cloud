@@ -36,13 +36,8 @@ class ProcessingState:
 
         if state.command:
             command = pydoc.locate(state.command)
-
-            media = Media.objects.get(pk=media_id)
-
-            command(media)
-
-            media.processing_state_code = state.code
-            media.save()
+            command(media_id=media_id)
+            Media.objects.filter(id=media_id).update(processing_state_code=state.code)
 
         if next_state and next_state.task:
             task = pydoc.locate(next_state.task)
