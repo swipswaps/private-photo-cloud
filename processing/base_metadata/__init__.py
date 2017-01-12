@@ -9,7 +9,7 @@ PROCESSORS = (
     'processing.base_metadata.filetype.MimetypeByContent',
     'processing.base_metadata.filetype.MediatypeByMimeType',
     'processing.base_metadata.filetype.ImageMetadataByContent',
-    'processing.base_metadata.filetype.ImageMimetypeByMetadata.run',
+    'processing.base_metadata.filetype.ImageMimetypeByMetadata',
     'processing.base_metadata.filetype.ImageDegreeByMetadata.run',
 )
 
@@ -20,18 +20,18 @@ class MediaProcessor:
 
     def __init__(self, processors):
         self.PROCESSORS = [
-            (fn, set(inspect.getfullargspec(fn).args) - {'self', 'cls'})
-            for fn in map(pydoc.locate, processors)
+            (path, fn, set(inspect.getfullargspec(fn).args) - {'self', 'cls'})
+            for path, fn in ((p, pydoc.locate(p)) for p in processors)
             ]
 
-        self.INPUT_FIELDS = {f for cls, fields in self.PROCESSORS for f in fields}
+        self.INPUT_FIELDS = {f for path, fn, fields in self.PROCESSORS for f in fields}
 
     def __call__(self, media):
         logger.info('extract base metadata for Media.id=%s', media.id)
 
         data = {k: getattr(media, k) for k in self.INPUT_FIELDS}
 
-        for fn, fields in self.PROCESSORS:
+        for path, fn, fields in self.PROCESSORS:
             try:
                 results = fn(**{k: data[k] for k in fields})
 
@@ -44,11 +44,11 @@ class MediaProcessor:
                     # result is a tuple: (k, v)
                     results = (results,)
             except Exception as ex:
-                logger.error('Got error in %s: %r', fn, ex)
+                logger.error('%s: %r', path, ex)
                 continue
 
             for k, v in results:
-                logger.info('Processes by %s: %s=%r', fn, k, v)
+                logger.info('%s: %s=%r', path, k, v)
                 data[k] = v
 
                 # TODO: Save into media final result
