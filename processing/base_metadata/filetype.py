@@ -32,17 +32,11 @@ def ImageMetadataByContent(media_type=None, content=None):
     return 'metadata', get_exiftool_info(content.path)
 
 
-class ImageMimetypeByMetadata:
-    IMAGE_MIMETYPE_KEYS = (
-        'File:MIMEType',
-    )
+def ImageMimetypeByMetadata(media_type=None, metadata=None):
+    if media_type != MediaConstMixin.MEDIA_IMAGE:
+        return
 
-    @classmethod
-    def run(cls, media_type=None, metadata=None):
-        if media_type != MediaConstMixin.MEDIA_IMAGE:
-            return
-
-        return 'mimetype', get_first_filled_key(metadata, cls.IMAGE_MIMETYPE_KEYS)
+    return 'mimetype', metadata.get('File:MIMEType')
 
 
 class ImageDegreeByMetadata:
