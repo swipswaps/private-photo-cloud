@@ -11,7 +11,10 @@ PROCESSORS = (
     'processing.base_metadata.filetype.MediatypeByMimeType',
     'processing.base_metadata.filetype.ImageMetadataByContent',
     'processing.base_metadata.filetype.ImageMimetypeByMetadata',
-    'processing.base_metadata.filetype.ImageDegreeByMetadata.run',
+    'processing.base_metadata.filetype.ImageDegreeByMetadata',
+    'processing.base_metadata.filetype.SizeCameraByMetadata',
+    'processing.base_metadata.filetype.DateBySource',
+    'processing.base_metadata.filetype.DateByMetadata',
     'processing.base_metadata.save_media',
 )
 
@@ -55,12 +58,12 @@ class DataProcessor:
         # TODO: Maybe initialize once on application startup
 
         processors_fns = ((pydoc.locate(p), p) for p in processors)
-        processors_args = ( (inspect.getfullargspec(fn), fn, path) for fn, path in processors_fns)
+        processors_args = ((inspect.getfullargspec(fn), fn, path) for fn, path in processors_fns)
 
         self.PROCESSORS = [
             (((set(args.args) - {'self', 'cls'}) if not args.varkw else self.ALL_ARGUMENTS), fn, path)
             for args, fn, path in processors_args
-        ]
+            ]
 
         self.ARGS = {arg for args, fn, path in self.PROCESSORS for arg in args}
 
@@ -97,6 +100,7 @@ class DataProcessor:
 
 
 def run(media_id=None):
+    # E.g. touch manage.py && ./manage.sh shell -c 'from processing import tasks; tasks.extract_base_metadata(814)'
     logger.info('extract base metadata for Media.id=%s', media_id)
     result = DataProcessor(PROCESSORS).run(media_id=media_id)
     logger.info('result: %r', result)
