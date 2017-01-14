@@ -9,12 +9,14 @@ PROCESSORS = (
     'processing.base_metadata.get_media_by_id',
     'processing.base_metadata.filetype.MimetypeByContent',
     'processing.base_metadata.filetype.MediatypeByMimeType',
+
     'processing.base_metadata.image_base_metadata.MetadataByContent',
     'processing.base_metadata.image_base_metadata.MimetypeByMetadata',
     'processing.base_metadata.image_base_metadata.DegreeByMetadata',
     'processing.base_metadata.image_base_metadata.SizeCameraByMetadata',
     'processing.base_metadata.image_base_metadata.DateBySource',
     'processing.base_metadata.image_base_metadata.DateByMetadata',
+
     'processing.base_metadata.save_media',
 )
 
@@ -57,7 +59,11 @@ class DataProcessor:
     def __init__(self, processors):
         # TODO: Maybe initialize once on application startup
 
-        processors_fns = ((pydoc.locate(p), p) for p in processors)
+        processors_fns = [(pydoc.locate(path), path) for path in processors]
+
+        missing_processors = [path for fn, path in processors_fns if not fn]
+        assert not missing_processors, 'Some processors are missing: %r' % (missing_processors)
+
         processors_args = ((inspect.getfullargspec(fn), fn, path) for fn, path in processors_fns)
 
         self.PROCESSORS = [
@@ -72,27 +78,36 @@ class DataProcessor:
 
         results = ()
 
-        for args, fn, path in self.PROCESSORS:
+        logger.info('INPUT: %r', kwargs)
+
+        for i, (args, fn, path) in enumerate(self.PROCESSORS):
             input_data = data if args is self.ALL_ARGUMENTS else {k: data[k] for k in args}
             try:
                 results = fn(**input_data)
 
                 if not results:
                     continue
+                elif isinstance(results, dict):
+                    pass
                 elif isinstance(results, types.GeneratorType):
                     # iterate over each "yield" -> run all code to catch all exceptions
-                    results = tuple(results)
+                    results = dict(results)
                 else:
                     # result is a tuple: (k, v)
-                    results = (results,)
+                    results = {results[0]: results[1]}
+
+                # Check again
+                if not results:
+                    continue
             except Exception as ex:
                 logger.error('%s: %r', path, ex)
-                continue
+                raise
 
-            for k, v in results:
-                if k != DataProcessor.INITIAL_STATE_ARG:
-                    logger.info('%s: %s=%r', path, k, v)
-                data[k] = v
+            data.update(results)
+
+            if i:
+                # skip results for first iteraton
+                logger.info('%s: %r', path, results)
 
         # Return not all intermediary variables but result of last command
         # If you want to -- you could make your last command to return all variables
@@ -103,4 +118,3 @@ def run(media_id=None):
     # E.g. touch manage.py && ./manage.sh shell -c 'from processing import tasks; tasks.extract_base_metadata(814)'
     logger.info('extract base metadata for Media.id=%s', media_id)
     result = DataProcessor(PROCESSORS).run(media_id=media_id)
-    logger.info('result: %r', result)
