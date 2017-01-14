@@ -16,6 +16,12 @@ PROCESSORS = (
     'processing.base_metadata.image_base_metadata.SizeCameraByMetadata',
     'processing.base_metadata.image_base_metadata.ShotAtByMetadata',
 
+    'processing.base_metadata.video_base_metadata.MetadataByContent',
+    'processing.base_metadata.video_base_metadata.DurationSizeByMetadata',
+    'processing.base_metadata.video_base_metadata.DegreeByMetadata',
+    'processing.base_metadata.video_base_metadata.CameraByMetadata',
+    'processing.base_metadata.video_base_metadata.ShotAtByMetadata',
+
     'processing.base_metadata.filetype.ShowAtByShotAtSourceLastModified',
     'processing.base_metadata.save_media',
 )
