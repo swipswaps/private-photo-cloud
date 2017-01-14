@@ -1,2 +1,9 @@
 #!/bin/sh
-exec docker exec -ti privatephotocloud_backend_1 ./manage.py "$@"
+
+if [ -t 0 ] ; then
+    PARAMS="-ti"
+else
+    PARAMS="-i"
+fi
+
+exec docker exec $PARAMS privatephotocloud_backend_1 ./manage.py "$@"
