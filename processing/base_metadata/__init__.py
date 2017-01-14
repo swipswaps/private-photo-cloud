@@ -6,54 +6,26 @@ import types
 logger = logging.getLogger(__name__)
 
 PROCESSORS = (
-    'processing.base_metadata.get_media_by_id',
-    'processing.base_metadata.filetype.MimetypeByContent',
-    'processing.base_metadata.filetype.MediatypeByMimeType',
+    'processing.base_metadata.common.get_media_by_id',
 
-    'processing.base_metadata.image_base_metadata.MetadataByContent',
-    'processing.base_metadata.image_base_metadata.MimetypeByMetadata',
-    'processing.base_metadata.image_base_metadata.DegreeByMetadata',
-    'processing.base_metadata.image_base_metadata.SizeCameraByMetadata',
-    'processing.base_metadata.image_base_metadata.ShotAtByMetadata',
+    'processing.base_metadata.common.MimetypeByContent',
+    'processing.base_metadata.common.MediatypeByMimeType',
+    'processing.base_metadata.common.ExiftoolMetadataByContent',
+    'processing.base_metadata.common.MimetypeByExiftoolMetadata',
 
-    'processing.base_metadata.video_base_metadata.MetadataByContent',
-    'processing.base_metadata.video_base_metadata.DurationSizeByMetadata',
-    'processing.base_metadata.video_base_metadata.DegreeByMetadata',
-    'processing.base_metadata.video_base_metadata.CameraByMetadata',
-    'processing.base_metadata.video_base_metadata.ShotAtByMetadata',
+    'processing.base_metadata.image.DegreeByExiftoolMetadata',
+    'processing.base_metadata.image.SizeCameraByExiftoolMetadata',
+    'processing.base_metadata.image.ShotAtByExiftoolMetadata',
 
-    'processing.base_metadata.filetype.ShowAtByShotAtSourceLastModified',
-    'processing.base_metadata.save_media',
+    'processing.base_metadata.video.FfprobeMetadataByContent',
+    'processing.base_metadata.video.DurationSizeByFfprobeMetadata',
+    'processing.base_metadata.video.DegreeByFfprobeMetadata',
+    'processing.base_metadata.video.CameraByFfprobeMetadata',
+    'processing.base_metadata.video.ShotAtByFfprobeMetadata',
+
+    'processing.base_metadata.common.ShowAtByShotAtSourceLastModified',
+    'processing.base_metadata.common.save_media',
 )
-
-
-def get_media_by_id(media_id=None, ARGS=None):
-    from storage.models import Media
-
-    # exclude arguments of this method
-    ARGS = set(ARGS) - set(inspect.getfullargspec(get_media_by_id).args) - DataProcessor.ALL_ARGUMENTS
-
-    media = Media.objects.filter(id=media_id).only(*ARGS).get()
-    media = {k: getattr(media, k) for k in ARGS}
-
-    yield DataProcessor.INITIAL_STATE_ARG, media
-    yield from media.items()
-
-
-def save_media(ARGS=None, media_id=None, **kwargs):
-    from storage.models import Media
-
-    initial_state = kwargs.pop(DataProcessor.INITIAL_STATE_ARG)
-    data = {k: v for k, v in kwargs.items() if v is not initial_state.get(k)}
-
-    media = Media.objects.filter(id=media_id).only('id').get()
-
-    for k, v in data.items():
-        setattr(media, k, v)
-
-    media.save(update_fields=data)
-
-    return 'media', media
 
 
 class DataProcessor:
@@ -91,20 +63,16 @@ class DataProcessor:
             try:
                 results = fn(**input_data)
 
-                if not results:
-                    continue
-                elif isinstance(results, dict):
-                    pass
-                elif isinstance(results, types.GeneratorType):
+                if isinstance(results, types.GeneratorType):
                     # iterate over each "yield" -> run all code to catch all exceptions
                     results = dict(results)
-                else:
+
+                if not results:
+                    # Nothing to do, go to the next processor
+                    continue
+                elif not isinstance(results, dict):
                     # result is a tuple: (k, v)
                     results = {results[0]: results[1]}
-
-                # Check again
-                if not results:
-                    continue
             except Exception as ex:
                 logger.error('%s: %r', path, ex)
                 raise

@@ -7,8 +7,6 @@ from storage.helpers import get_first_filled_key
 
 
 class ImageMetadataConst:
-    KEY_MIMETYPE = 'File:MIMEType'
-
     KEYS_IMAGE_ORIENTATION = (
         'EXIF:Orientation',
         'MakerNotes:CameraOrientation',
@@ -76,33 +74,11 @@ class ImageMetadataConst:
         return media_type == MediaConstMixin.MEDIA_IMAGE
 
 
-def MetadataByContent(media_type=None, content=None):
-    from storage.tools.exiftool import get_exiftool_info
-
+def DegreeByExiftoolMetadata(media_type=None, metadata=None):
     if not ImageMetadataConst.is_image(media_type=media_type):
         return
 
-    # Alternative: exiv2 (faster but less formats)
-    # See: http://dev.exiv2.org/projects/exiv2/wiki/How_does_Exiv2_compare_to_Exiftool
-    return 'metadata', get_exiftool_info(content.path)
-
-
-def MimetypeByMetadata(media_type=None, metadata=None):
-    if not ImageMetadataConst.is_image(media_type=media_type):
-        return
-
-    mimetype = metadata.get(ImageMetadataConst.KEY_MIMETYPE)
-
-    if mimetype:
-        # Do not overwrite if empty
-        return 'mimetype', mimetype
-
-
-def DegreeByMetadata(media_type=None, metadata=None):
-    if not ImageMetadataConst.is_image(media_type=media_type):
-        return
-
-    orientation = get_first_filled_key(metadata, ImageMetadataConst.KEYS_IMAGE_ORIENTATION)
+    orientation = get_first_filled_key(metadata['exiftool'], ImageMetadataConst.KEYS_IMAGE_ORIENTATION)
 
     if not orientation:
         # Was not found
@@ -131,14 +107,14 @@ def DegreeByMetadata(media_type=None, metadata=None):
     return 'needed_rotate_degree', 360 - degree
 
 
-def SizeCameraByMetadata(media_type=None, metadata=None):
+def SizeCameraByExiftoolMetadata(media_type=None, metadata=None):
     if not ImageMetadataConst.is_image(media_type=media_type):
         return
 
-    yield 'camera', get_first_filled_key(metadata, ImageMetadataConst.KEYS_IMAGE_CAMERA) or ''
+    yield 'camera', get_first_filled_key(metadata['exiftool'], ImageMetadataConst.KEYS_IMAGE_CAMERA) or ''
 
-    width = get_first_filled_key(metadata, ImageMetadataConst.KEYS_IMAGE_WIDTH)
-    height = get_first_filled_key(metadata, ImageMetadataConst.KEYS_IMAGE_HEIGHT)
+    width = get_first_filled_key(metadata['exiftool'], ImageMetadataConst.KEYS_IMAGE_WIDTH)
+    height = get_first_filled_key(metadata['exiftool'], ImageMetadataConst.KEYS_IMAGE_HEIGHT)
 
     assert width and height
 
@@ -173,11 +149,11 @@ def parse_shot_at(value):
     raise NotImplementedError(value)
 
 
-def ShotAtByMetadata(media_type=None, metadata=None):
+def ShotAtByExiftoolMetadata(media_type=None, metadata=None):
     if not ImageMetadataConst.is_image(media_type=media_type):
         return
 
-    shot_date = get_first_filled_key(metadata, ImageMetadataConst.KEYS_IMAGE_SHOOT)
+    shot_date = get_first_filled_key(metadata['exiftool'], ImageMetadataConst.KEYS_IMAGE_SHOOT)
 
     if shot_date:
         return 'shot_at', parse_shot_at(shot_date)
