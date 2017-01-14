@@ -40,7 +40,6 @@ def save_media(ARGS=None, media_id=None, **kwargs):
     return 'media', media
 
 
-
 def MimetypeByContent(content=None):
     import magic
 
