@@ -14,9 +14,9 @@ PROCESSORS = (
     'processing.base_metadata.image_base_metadata.MimetypeByMetadata',
     'processing.base_metadata.image_base_metadata.DegreeByMetadata',
     'processing.base_metadata.image_base_metadata.SizeCameraByMetadata',
-    'processing.base_metadata.image_base_metadata.DateBySource',
-    'processing.base_metadata.image_base_metadata.DateByMetadata',
+    'processing.base_metadata.image_base_metadata.ShotAtByMetadata',
 
+    'processing.base_metadata.filetype.ShowAtByShotAtSourceLastModified',
     'processing.base_metadata.save_media',
 )
 

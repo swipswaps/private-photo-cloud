@@ -3,11 +3,10 @@ import re
 
 from django.utils import timezone
 
-from storage.const import MediaConstMixin
 from storage.helpers import get_first_filled_key
 
 
-class MetadataConst:
+class ImageMetadataConst:
     KEY_MIMETYPE = 'File:MIMEType'
 
     KEYS_IMAGE_ORIENTATION = (
@@ -72,37 +71,15 @@ class MetadataConst:
     )
 
     @classmethod
-    def parse_shot_at(cls, value):
-        # Fix too short microseconds section (14:29:25.018 => 14:29:25.01800)
-        value = re.sub(r'(?<=[.])(\d+)$', lambda m: m.group(1).ljust(6, '0'), value)
-
-        for dt_format in cls.SHOOT_DATE_FORMATS:
-            try:
-                dt = datetime.datetime.strptime(value, dt_format)
-            except ValueError:
-                continue
-
-            if not dt.tzinfo:
-                """
-                No timezone provided -- that means date is device date:
-
-                a) for camera -- time of home region
-                b) for smartphone:
-                    1) without TZ adjustment -- time of home region
-                    2) with TZ adjustment -- time of current region (see GPS coordinates)
-
-                # TODO: Implement complex logic instead of converting to server TZ.
-                """
-                return timezone.get_current_timezone().localize(dt, is_dst=None)
-            return dt
-
-        raise NotImplementedError(value)
+    def is_image(cls, media_type=None):
+        from storage.const import MediaConstMixin
+        return media_type == MediaConstMixin.MEDIA_IMAGE
 
 
 def MetadataByContent(media_type=None, content=None):
     from storage.tools.exiftool import get_exiftool_info
 
-    if media_type != MediaConstMixin.MEDIA_IMAGE:
+    if not ImageMetadataConst.is_image(media_type=media_type):
         return
 
     # Alternative: exiv2 (faster but less formats)
@@ -111,10 +88,10 @@ def MetadataByContent(media_type=None, content=None):
 
 
 def MimetypeByMetadata(media_type=None, metadata=None):
-    if media_type != MediaConstMixin.MEDIA_IMAGE:
+    if not ImageMetadataConst.is_image(media_type=media_type):
         return
 
-    mimetype = metadata.get(MetadataConst.KEY_MIMETYPE)
+    mimetype = metadata.get(ImageMetadataConst.KEY_MIMETYPE)
 
     if mimetype:
         # Do not overwrite if empty
@@ -122,10 +99,10 @@ def MimetypeByMetadata(media_type=None, metadata=None):
 
 
 def DegreeByMetadata(media_type=None, metadata=None):
-    if media_type != MediaConstMixin.MEDIA_IMAGE:
+    if not ImageMetadataConst.is_image(media_type=media_type):
         return
 
-    orientation = get_first_filled_key(metadata, MetadataConst.KEYS_IMAGE_ORIENTATION)
+    orientation = get_first_filled_key(metadata, ImageMetadataConst.KEYS_IMAGE_ORIENTATION)
 
     if not orientation:
         # Was not found
@@ -133,12 +110,12 @@ def DegreeByMetadata(media_type=None, metadata=None):
 
     try:
         # First check exact match
-        return 'needed_rotate_degree', MetadataConst.ORIENTATIONS_NO_DEGREE[orientation]
+        return 'needed_rotate_degree', ImageMetadataConst.ORIENTATIONS_NO_DEGREE[orientation]
     except KeyError:
         pass
 
     # Try to parse orientation
-    m = MetadataConst.RE_ORIENTATION.search(orientation)
+    m = ImageMetadataConst.RE_ORIENTATION.search(orientation)
 
     if not m:
         # Failed to parse
@@ -155,13 +132,13 @@ def DegreeByMetadata(media_type=None, metadata=None):
 
 
 def SizeCameraByMetadata(media_type=None, metadata=None):
-    if media_type != MediaConstMixin.MEDIA_IMAGE:
+    if not ImageMetadataConst.is_image(media_type=media_type):
         return
 
-    yield 'camera', get_first_filled_key(metadata, MetadataConst.KEYS_IMAGE_CAMERA) or ''
+    yield 'camera', get_first_filled_key(metadata, ImageMetadataConst.KEYS_IMAGE_CAMERA) or ''
 
-    width = get_first_filled_key(metadata, MetadataConst.KEYS_IMAGE_WIDTH)
-    height = get_first_filled_key(metadata, MetadataConst.KEYS_IMAGE_HEIGHT)
+    width = get_first_filled_key(metadata, ImageMetadataConst.KEYS_IMAGE_WIDTH)
+    height = get_first_filled_key(metadata, ImageMetadataConst.KEYS_IMAGE_HEIGHT)
 
     assert width and height
 
@@ -169,21 +146,38 @@ def SizeCameraByMetadata(media_type=None, metadata=None):
     yield 'height', height
 
 
-def DateBySource(source_lastmodified=None):
-    # Default value for show_at -- override later with more precise value
-    return 'show_at', source_lastmodified
+def parse_shot_at(value):
+    # Fix too short microseconds section (14:29:25.018 => 14:29:25.01800)
+    value = re.sub(r'(?<=[.])(\d+)$', lambda m: m.group(1).ljust(6, '0'), value)
+
+    for dt_format in ImageMetadataConst.SHOOT_DATE_FORMATS:
+        try:
+            dt = datetime.datetime.strptime(value, dt_format)
+        except ValueError:
+            continue
+
+        if not dt.tzinfo:
+            """
+            No timezone provided -- that means date is device date:
+
+            a) for camera -- time of home region
+            b) for smartphone:
+                1) without TZ adjustment -- time of home region
+                2) with TZ adjustment -- time of current region (see GPS coordinates)
+
+            # TODO: Implement complex logic instead of converting to server TZ.
+            """
+            return timezone.get_current_timezone().localize(dt, is_dst=None)
+        return dt
+
+    raise NotImplementedError(value)
 
 
-def DateByMetadata(media_type=None, metadata=None):
-    if media_type != MediaConstMixin.MEDIA_IMAGE:
+def ShotAtByMetadata(media_type=None, metadata=None):
+    if not ImageMetadataConst.is_image(media_type=media_type):
         return
 
-    shot_date = get_first_filled_key(metadata, MetadataConst.KEYS_IMAGE_SHOOT)
+    shot_date = get_first_filled_key(metadata, ImageMetadataConst.KEYS_IMAGE_SHOOT)
 
-    if not shot_date:
-        return
-
-    shot_date = MetadataConst.parse_shot_at(shot_date)
-
-    yield 'show_at', shot_date
-    yield 'shot_at', shot_date
+    if shot_date:
+        return 'shot_at', parse_shot_at(shot_date)

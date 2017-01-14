@@ -15,3 +15,9 @@ def MimetypeByContent(content=None):
 
 def MediatypeByMimeType(mimetype=None):
     return 'media_type', TYPES.get(mimetype.split('/')[0], TYPE_DEFAULT)
+
+
+def ShowAtByShotAtSourceLastModified(shot_at=None, source_lastmodified=None):
+    if shot_at:
+        return 'show_at', shot_at
+    return 'show_at', source_lastmodified
