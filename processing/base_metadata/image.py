@@ -81,7 +81,7 @@ def DegreeByExiftoolMetadata(media_type=None, metadata=None):
     orientation = get_first_filled_key(metadata['exiftool'], ImageMetadataConst.KEYS_IMAGE_ORIENTATION)
 
     if not orientation:
-        # Was not found
+        # Was not found -- prompt user to rotate
         return 'needed_rotate_degree', None
 
     try:
