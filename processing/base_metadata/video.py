@@ -20,10 +20,8 @@ def FfprobeMetadataByContent(media_type=None, content=None, metadata=None):
     if not VideoMetadataConst.is_video(media_type=media_type):
         return
 
-    metadata = metadata or {}
-    metadata['ffprobe'] = ffmpeg.get_ffprobe_info(content.path)
-
-    return 'metadata', metadata
+    # Create a clone before update -- to keep initial state immutable
+    return 'metadata', dict(metadata or {}, ffprobe=ffmpeg.get_ffprobe_info(content.path))
 
 
 def get_get_video_stream(streams=None):

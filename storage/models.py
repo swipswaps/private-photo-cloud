@@ -1,5 +1,3 @@
-import base64
-import binascii
 import os
 
 import logging
@@ -11,7 +9,9 @@ from django.utils.translation import ugettext_lazy as _
 from django.db.models.signals import post_save
 
 from processing.states import ProcessingState
+from storage.helpers import base85_to_hex, hex_to_base85
 from storage.tools.sequence import get_next_value
+
 from .const import ShotConstMixin, MediaConstMixin
 
 logger = logging.getLogger(__name__)
@@ -56,10 +56,20 @@ class Shot(ShotConstMixin, models.Model):
 
 
 class Media(MediaConstMixin, models.Model):
+    content_extension = None
+
+    @staticmethod
+    def generate_content_filename_permanent(uploader_id=None, show_at=None, sha1_hex=None, size_bytes=None, content_extension=None):
+        return 'content/{uploader_id}/{show_at:%Y%m}/{sha1_hex}_{size_bytes}{content_extension}'.format(
+            uploader_id=uploader_id,
+            show_at=show_at,
+            sha1_hex=sha1_hex,
+            size_bytes=size_bytes,
+            content_extension=content_extension
+        )
+
     def generate_content_filename(instance, filename):
-        if instance.show_at and instance.content_extension:
-            return 'content/{0.uploader_id}/{0.show_at:%Y%m}/{0.sha1_hex}_{0.size_bytes}{0.content_extension}'.format(
-                instance)
+        # It is in initial file generation
         return 'content/{0.uploader_id}/{0.sha1_hex}_{0.size_bytes}'.format(instance)
 
     def generate_thumbnail_filename(instance, filename):
@@ -154,11 +164,11 @@ class Media(MediaConstMixin, models.Model):
     # hashers properties, are often used
     @property
     def sha1_hex(self):
-        return base64.b85decode(self.sha1_b85).hex()
+        return base85_to_hex(self.sha1_b85)
 
     @sha1_hex.setter
     def sha1_hex(self, digest_hex):
-        self.sha1_b85 = base64.b85encode(binascii.unhexlify(digest_hex))
+        self.sha1_b85 = hex_to_base85(digest_hex)
 
     # /hashers properties
 
@@ -169,17 +179,17 @@ class Media(MediaConstMixin, models.Model):
     def default_thumbnail_url(self):
         return settings.MEDIA_URL + self.generate_thumbnail_filename(self, None)
 
-    def update_content_location(self):
-        content_suffix = self.generate_content_filename(self, None)
-        content_path = os.path.join(settings.MEDIA_ROOT, content_suffix)
+    @staticmethod
+    def move_file(storage=None, old_path=None, new_path=None):
+        assert new_path != old_path
 
-        if content_path == self.content.path:
-            return
+        old_full_path = storage.path(old_path)
+        new_full_path = storage.path(new_path)
 
-        logger.info(f'Move content file: {self.content.path} => {content_path}...')
-        os.makedirs(os.path.dirname(content_path), exist_ok=True)
-        os.rename(self.content.path, content_path)
-        self.content.name = content_suffix
+        logger.info(f'Move file: {old_full_path} => {new_full_path}...')
+
+        os.makedirs(os.path.dirname(new_full_path), exist_ok=True)
+        os.rename(old_full_path, new_full_path)
 
     @classmethod
     def post_save(cls, sender, instance, created, **kwargs):
@@ -195,7 +205,6 @@ class Media(MediaConstMixin, models.Model):
         ]
 
 # We must make it static after initialization, otherwise methods would not work in FileField
-Media.generate_content_filename = staticmethod(Media.generate_content_filename)
 Media.generate_thumbnail_filename = staticmethod(Media.generate_thumbnail_filename)
 Media.generate_screenshot_filename = staticmethod(Media.generate_screenshot_filename)
 
