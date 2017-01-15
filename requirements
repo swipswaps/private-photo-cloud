@@ -1,9 +1,8 @@
 # All dependencies must be frozen
 
 #Django==1.11              # web framework, last stable version
-# Use latest from master, i.e. pre-1.11
-# 51cde873d9fc8e4540f4efecbd39cfe8e770be38 is last commit to work with django_filter
-https://github.com/django/django/archive/32265361279b3316f5bce8efa71f2049409461e3.tar.gz
+# Use latest from master they release 1.11
+https://github.com/django/django/archive/master.tar.gz
 
 six==1.10.0                 # core for py2+3 <- Django
 pytz==2016.10               # timezones for Python <- Django
@@ -16,7 +15,9 @@ djangorestframework==3.5.3  # REST framework
 Markdown==2.6.7             # for REST framework -- browsable API
 #django-filter==1.0.1        # for REST framework -- filtering support
 https://github.com/carltongibson/django-filter/archive/develop.tar.gz
-django-crispy-forms==1.6.1  # for REST framework -- filter forms support
+#django-crispy-forms==1.6.1  # for REST framework -- filter forms support
+# Use latest from dev till they fix warnings on Django 1.11
+https://github.com/django-crispy-forms/django-crispy-forms/archive/dev.tar.gz
 
 psycopg2==2.6.2             # PostgreSQL connector
 django-redis==4.7.0         # django redis cache backend
@@ -27,6 +28,7 @@ Pillow==4.0.0               # image processing library
 # Enable upstream once fixed on Alpine
 # python-magic==0.4.13        # recognize content type by content
 #https://github.com/ahupp/python-magic/archive/master.tar.gz
+# Use fork till they fix crash on Alpine
 https://github.com/krallin/python-magic/archive/master.tar.gz
 
 celery==4.0.2               # background worker
@@ -40,7 +42,7 @@ vine==1.1.3                 # <- celery
 # Disable for instance -- it does not track changes in all files inside Docker for Maс
 # pyinotify==0.9.6            # better check code updates using inotify
 
-channels==1.0.1             # WebSockets for Django + sort of event-driven
+channels==1.0.2             # WebSockets for Django + sort of event-driven
 daphne==1.0.1               # <- channels
 asgiref==1.0.0              # <- channels
 autobahn==0.17.1            # daphne <- channels
