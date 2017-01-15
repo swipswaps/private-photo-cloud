@@ -1,10 +1,14 @@
+import base64
+
+import binascii
+
+
 def get_first_filled_value(values):
+    # works better on long sequence: return next(filter(None, values), None)
     # loop works best on short sequence
     for value in values:
         if value:
             return value
-    # works better on long sequence
-    # return next(filter(None, values), None)
 
 
 def get_first_filled_key(data, keys):
@@ -32,3 +36,11 @@ def resolve_dict(path, data):
 
 def map_dict(data, mappings):
     return {mappings.get(k, k): v for k, v in data.items()}
+
+
+def base85_to_hex(base85_text):
+    return base64.b85decode(base85_text).hex()
+
+
+def hex_to_base85(hex_text):
+    return base64.b85encode(binascii.unhexlify(hex_text))
