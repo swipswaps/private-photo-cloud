@@ -1,5 +1,6 @@
 import datetime
 
+from processing.media_processors import is_video
 from storage.helpers import resolve_dict, get_first_filled_value
 from storage.tools import ffmpeg
 
@@ -10,14 +11,9 @@ class VideoMetadataConst:
         'format:tags:creation_time',
     )
 
-    @classmethod
-    def is_video(cls, media_type=None):
-        from storage.const import MediaConstMixin
-        return media_type == MediaConstMixin.MEDIA_VIDEO
-
 
 def FfprobeMetadataByContent(media_type=None, content=None, metadata=None):
-    if not VideoMetadataConst.is_video(media_type=media_type):
+    if not is_video(media_type=media_type):
         return
 
     # Create a clone before update -- to keep initial state immutable
@@ -35,7 +31,7 @@ def get_get_video_stream(streams=None):
 
 
 def DurationSizeByFfprobeMetadata(media_type=None, metadata=None):
-    if not VideoMetadataConst.is_video(media_type=media_type):
+    if not is_video(media_type=media_type):
         return
 
     video_stream = get_get_video_stream(streams=metadata['ffprobe']['streams'])
@@ -52,7 +48,7 @@ def DurationSizeByFfprobeMetadata(media_type=None, metadata=None):
 
 
 def DegreeByFfprobeMetadata(media_type=None):
-    if not VideoMetadataConst.is_video(media_type=media_type):
+    if not is_video(media_type=media_type):
         return
 
     # videos are auto-rotated by ffmpeg during playout / screenshot extraction, so no rotation needed
@@ -61,7 +57,7 @@ def DegreeByFfprobeMetadata(media_type=None):
 
 
 def CameraByFfprobeMetadata(media_type=None, metadata=None):
-    if not VideoMetadataConst.is_video(media_type=media_type):
+    if not is_video(media_type=media_type):
         return
 
     yield 'camera', resolve_dict('format:tags:com.apple.quicktime.model', metadata['ffprobe']) or ''
@@ -79,7 +75,7 @@ def get_shot_dates(metadata=None):
 def ShotAtByFfprobeMetadata(media_type=None, metadata=None):
     from processing.base_metadata.image import parse_shot_at
 
-    if not VideoMetadataConst.is_video(media_type=media_type):
+    if not is_video(media_type=media_type):
         return
 
     shot_date = get_first_filled_value(get_shot_dates(metadata=metadata['ffprobe']))

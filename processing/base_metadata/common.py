@@ -1,9 +1,7 @@
-import inspect
 import os
 
 from django.db.models.fields.files import FieldFile
 
-from processing.base_metadata import DataProcessor
 from storage.const import MediaConstMixin
 from storage.helpers import get_first_filled_value, base85_to_hex
 
@@ -13,37 +11,6 @@ TYPES = {
 }
 TYPE_DEFAULT = MediaConstMixin.MEDIA_OTHER
 VISUAL_TYPES = (MediaConstMixin.MEDIA_IMAGE, MediaConstMixin.MEDIA_VIDEO)
-
-
-def get_media_by_id(media_id=None, ARGS=None):
-    from storage.models import Media
-
-    # exclude arguments of this method
-    ARGS = set(ARGS) - set(inspect.getfullargspec(get_media_by_id).args) - DataProcessor.ALL_ARGUMENTS
-
-    media = Media.objects.filter(id=media_id).only(*ARGS).get()
-    media = {k: getattr(media, k) for k in ARGS}
-
-    yield DataProcessor.INITIAL_STATE_ARG, media
-    yield from media.items()
-
-
-def save_media(ARGS=None, media_id=None, **kwargs):
-    from storage.models import Media
-
-    initial_state = kwargs.pop(DataProcessor.INITIAL_STATE_ARG)
-
-    # Save only those values that changed. For mutable objects (e.g. dict) we must receive a copy here.
-    data = {k: v for k, v in kwargs.items() if v is not initial_state.get(k)}
-
-    media = Media.objects.filter(id=media_id).only('id').get()
-
-    for k, v in data.items():
-        setattr(media, k, v)
-
-    media.save(update_fields=data.keys())
-
-    return 'media', media
 
 
 def MimetypeByContent(content=None):

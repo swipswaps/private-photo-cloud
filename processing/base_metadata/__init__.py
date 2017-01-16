@@ -5,7 +5,7 @@ from processing.processor import DataProcessor
 logger = logging.getLogger(__name__)
 
 PROCESSORS = (
-    'processing.base_metadata.common.get_media_by_id',
+    'processing.media_processors.get_media_by_id',
 
     'processing.base_metadata.common.MimetypeByContent',
     'processing.base_metadata.common.MediatypeByMimeType',
@@ -23,9 +23,9 @@ PROCESSORS = (
     'processing.base_metadata.video.ShotAtByFfprobeMetadata',
 
     'processing.base_metadata.common.ShowAtByShotAtSourceLastModified',
-
     'processing.base_metadata.common.ContentByExtensionShowAt.run',  # that must go RIGHT before `save_media`
-    'processing.base_metadata.common.save_media',
+
+    'processing.media_processors.save_media',
 )
 
 

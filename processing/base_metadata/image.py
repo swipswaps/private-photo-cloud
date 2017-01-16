@@ -3,6 +3,7 @@ import re
 
 from django.utils import timezone
 
+from processing.media_processors import is_image
 from storage.helpers import get_first_filled_key
 
 
@@ -68,14 +69,9 @@ class ImageMetadataConst:
         '%Y-%m-%dT%H:%M:%S%z',  # 2016-10-22T14:39:13+0200
     )
 
-    @classmethod
-    def is_image(cls, media_type=None):
-        from storage.const import MediaConstMixin
-        return media_type == MediaConstMixin.MEDIA_IMAGE
-
 
 def DegreeByExiftoolMetadata(media_type=None, metadata=None):
-    if not ImageMetadataConst.is_image(media_type=media_type):
+    if not is_image(media_type=media_type):
         return
 
     orientation = get_first_filled_key(metadata['exiftool'], ImageMetadataConst.KEYS_IMAGE_ORIENTATION)
@@ -108,7 +104,7 @@ def DegreeByExiftoolMetadata(media_type=None, metadata=None):
 
 
 def SizeCameraByExiftoolMetadata(media_type=None, metadata=None):
-    if not ImageMetadataConst.is_image(media_type=media_type):
+    if not is_image(media_type=media_type):
         return
 
     yield 'camera', get_first_filled_key(metadata['exiftool'], ImageMetadataConst.KEYS_IMAGE_CAMERA) or ''
@@ -150,7 +146,7 @@ def parse_shot_at(value):
 
 
 def ShotAtByExiftoolMetadata(media_type=None, metadata=None):
-    if not ImageMetadataConst.is_image(media_type=media_type):
+    if not is_image(media_type=media_type):
         return
 
     shot_date = get_first_filled_key(metadata['exiftool'], ImageMetadataConst.KEYS_IMAGE_SHOOT)
