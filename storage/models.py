@@ -180,11 +180,11 @@ class Media(MediaConstMixin, models.Model):
         return settings.MEDIA_URL + self.generate_thumbnail_filename(self, None)
 
     @staticmethod
-    def move_file(storage=None, old_path=None, new_path=None):
-        assert new_path != old_path
+    def move_file(storage=None, old_name=None, new_name=None):
+        assert new_name != old_name
 
-        old_full_path = storage.path(old_path)
-        new_full_path = storage.path(new_path)
+        old_full_path = storage.path(old_name)
+        new_full_path = storage.path(new_name)
 
         logger.info(f'Move file: {old_full_path} => {new_full_path}...')
 

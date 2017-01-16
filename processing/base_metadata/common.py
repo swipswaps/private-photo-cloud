@@ -112,10 +112,12 @@ class ContentByExtensionShowAt:
         if content_name == content.name:
             return
 
-        # NOTE: This changes file system state => make it as late as possible, right before `Media.save`
-        Media.move_file(storage=content.storage, old_path=content.name, new_path=content_name)
+        content_field = Media._meta.get_field('content')
 
-        return 'content', FieldFile(instance=content.instance, field=content.field, name=content_name)
+        # NOTE: This changes file system state => make it as late as possible, right before `Media.save`
+        Media.move_file(storage=content_field.storage, old_name=content.name, new_name=content_name)
+
+        return 'content', FieldFile(instance=None, field=content_field, name=content_name)
 
     @staticmethod
     def get_content_extension(mimetype=None, source_filename=None):
