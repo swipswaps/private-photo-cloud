@@ -2,15 +2,9 @@ import os
 
 from django.db.models.fields.files import FieldFile
 
+from processing.media_processors import is_image, is_video
 from storage.const import MediaConstMixin
 from storage.helpers import get_first_filled_value, base85_to_hex
-
-TYPES = {
-    'image': MediaConstMixin.MEDIA_IMAGE,
-    'video': MediaConstMixin.MEDIA_VIDEO,
-}
-TYPE_DEFAULT = MediaConstMixin.MEDIA_OTHER
-VISUAL_TYPES = (MediaConstMixin.MEDIA_IMAGE, MediaConstMixin.MEDIA_VIDEO)
 
 
 def MimetypeByContent(content=None):
@@ -19,8 +13,16 @@ def MimetypeByContent(content=None):
     return 'mimetype', magic.from_file(content.path, mime=True)
 
 
-def MediatypeByMimeType(mimetype=None):
-    return 'media_type', TYPES.get(mimetype.split('/')[0], TYPE_DEFAULT)
+class MediatypeByMimeType:
+    TYPES = {
+        'image': MediaConstMixin.MEDIA_IMAGE,
+        'video': MediaConstMixin.MEDIA_VIDEO,
+    }
+    TYPE_DEFAULT = MediaConstMixin.MEDIA_OTHER
+
+    @staticmethod
+    def run(mimetype=None):
+        return 'media_type', MediatypeByMimeType.TYPES.get(mimetype.split('/')[0], MediatypeByMimeType.TYPE_DEFAULT)
 
 
 def ShowAtByShotAtSourceLastModified(shot_at=None, source_lastmodified=None):
@@ -32,7 +34,7 @@ def ShowAtByShotAtSourceLastModified(shot_at=None, source_lastmodified=None):
 def ExiftoolMetadataByContent(content=None, media_type=None, metadata=None):
     from storage.tools.exiftool import get_exiftool_info
 
-    if media_type not in VISUAL_TYPES:
+    if not is_image(media_type) and not is_video(media_type):
         return
 
     # Alternative: exiv2 (faster but less formats)
@@ -43,7 +45,7 @@ def ExiftoolMetadataByContent(content=None, media_type=None, metadata=None):
 
 
 def MimetypeByExiftoolMetadata(media_type=None, metadata=None):
-    if media_type not in VISUAL_TYPES:
+    if not is_image(media_type) and not is_video(media_type):
         return
 
     mimetype = metadata['exiftool'].get('File:MIMEType')

@@ -2,17 +2,11 @@ import datetime
 
 from processing.media_processors import is_video
 from storage.helpers import resolve_dict, get_first_filled_value
-from storage.tools import ffmpeg
-
-
-class VideoMetadataConst:
-    KEYS_VIDEO_SHOOT = (
-        'format:tags:com.apple.quicktime.creationdate',
-        'format:tags:creation_time',
-    )
 
 
 def FfprobeMetadataByContent(media_type=None, content=None, metadata=None):
+    from storage.tools import ffmpeg
+
     if not is_video(media_type=media_type):
         return
 
@@ -63,22 +57,29 @@ def CameraByFfprobeMetadata(media_type=None, metadata=None):
     yield 'camera', resolve_dict('format:tags:com.apple.quicktime.model', metadata['ffprobe']) or ''
 
 
-def get_shot_dates(metadata=None):
-    for path in VideoMetadataConst.KEYS_VIDEO_SHOOT:
-        yield resolve_dict(path, metadata)
+class ShotAtByFfprobeMetadata:
+    KEYS_VIDEO_SHOOT = (
+        'format:tags:com.apple.quicktime.creationdate',
+        'format:tags:creation_time',
+    )
 
-    # try all streams
-    for stream in metadata["streams"]:
-        yield resolve_dict('tags.creation_time', stream)
+    @staticmethod
+    def run(media_type=None, metadata=None):
+        from processing.base_metadata.image import ShotDate
 
+        if not is_video(media_type=media_type):
+            return
 
-def ShotAtByFfprobeMetadata(media_type=None, metadata=None):
-    from processing.base_metadata.image import parse_shot_at
+        shot_date = get_first_filled_value(ShotAtByFfprobeMetadata.get_shot_dates(metadata=metadata['ffprobe']))
 
-    if not is_video(media_type=media_type):
-        return
+        if shot_date:
+            return 'shot_at', ShotDate.parse(shot_date)
 
-    shot_date = get_first_filled_value(get_shot_dates(metadata=metadata['ffprobe']))
+    @staticmethod
+    def get_shot_dates(metadata=None):
+        for path in ShotAtByFfprobeMetadata.KEYS_VIDEO_SHOOT:
+            yield resolve_dict(path, metadata)
 
-    if shot_date:
-        return 'shot_at', parse_shot_at(shot_date)
+        # try all streams
+        for stream in metadata["streams"]:
+            yield resolve_dict('tags.creation_time', stream)
