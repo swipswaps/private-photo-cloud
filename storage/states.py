@@ -1,22 +1,6 @@
-import datetime
-import json
 import logging
-import mimetypes
-import os
-import re
-import tempfile
 
 from celery import shared_task
-
-from PIL import Image
-from django.core.files import File
-from django.core.files.uploadedfile import TemporaryUploadedFile, SimpleUploadedFile
-from django.utils import timezone
-
-from storage import helpers
-from storage.helpers import resolve_dict, get_first_filled_value
-from storage.tools import ffmpeg
-from storage.tools.exiftool import get_exiftool_info, extract_any_embed_image
 
 logger = logging.getLogger(__name__)
 
