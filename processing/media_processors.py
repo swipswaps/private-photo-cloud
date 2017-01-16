@@ -1,7 +1,22 @@
 import inspect
+import json
+
+from channels import Group
 
 from processing.processor import DataProcessor
 from storage.const import MediaConstMixin
+
+
+def is_image(media_type=None):
+    return media_type == MediaConstMixin.MEDIA_IMAGE
+
+
+def is_video(media_type=None):
+    return media_type == MediaConstMixin.MEDIA_VIDEO
+
+
+def is_other(media_type=None):
+    return media_type == MediaConstMixin.MEDIA_OTHER
 
 
 def get_media_by_id(media_id=None, ARGS=None):
@@ -35,11 +50,12 @@ def save_media(ARGS=None, media_id=None, **kwargs):
     return 'media', media
 
 
-def is_image(media_type=None):
-    return media_type == MediaConstMixin.MEDIA_IMAGE
-
-def is_video(media_type=None):
-    return media_type == MediaConstMixin.MEDIA_VIDEO
-
-def is_other(media_type=None):
-    return media_type == MediaConstMixin.MEDIA_OTHER
+def ws_notify_about_thumbnail(media=None):
+    Group(f'upload-{media.uploader_id}').send({'text': json.dumps(
+        ('thumbnail', {
+            'media': {
+                'id': media.id,
+                'thumbnail': media.thumbnail.url if media.thumbnail else None
+            }
+        })
+    )})

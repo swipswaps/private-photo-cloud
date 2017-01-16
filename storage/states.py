@@ -103,14 +103,6 @@ class MetadataMediaState(MediaState):
 class ScreenshotMediaState(MediaState):
     STATE_CODE = 2
 
-    VIDEO_SCREENSHOT_SECOND = 10
-    SCREENSHOT_SETTINGS = {
-        'format': 'JPEG',
-        'quality': 95,
-        'progressive': True,
-        'optimize': True,
-    }
-
     @classmethod
     def get_next_state(cls, media):
         return ThumbnailMediaState
@@ -123,97 +115,18 @@ class ScreenshotMediaState(MediaState):
 
         logger.debug("extract screenshot")
 
-        screenshot_second = min(media.duration.total_seconds() // 3, cls.VIDEO_SCREENSHOT_SECOND)
-
-        screenshot = TemporaryUploadedFile(name='screenshot.jpg', content_type='', size=0, charset='')
-
-        with tempfile.TemporaryFile('w+b') as screenshot_raw:
-            ffmpeg.get_screenshot(media.content.path, seconds_offset=screenshot_second, hide_log=True,
-                                  target=screenshot_raw)
-
-            with Image.open(screenshot_raw) as image:
-                image.save(screenshot, **cls.SCREENSHOT_SETTINGS)
-
-        # Don't use screenshot directly since it would be deleted before closing, making TempFile crash
-        media.screenshot = File(screenshot)
-
 
 class ThumbnailMediaState(MediaState):
     STATE_CODE = 3
-
-    THUMBNAIL_RESIZE_SETTINGS = {
-        'size': (160, 160),
-        'resample': Image.LANCZOS,  # Image.NEAREST | Image.BILINEAR | Image.BICUBIC | Image.LANCZOS
-    }
-
-    THUMBNAIL_SETTINGS = {
-        'format': 'JPEG',
-        'quality': 95,
-        'progressive': True,
-        'optimize': True,
-    }
 
     @classmethod
     def get_next_state(cls, media):
         return ClassifyMediaState
 
     @classmethod
-    def post_save(cls, media):
-        from channels import Group
-
-        Group(f'upload-{media.uploader_id}').send({
-            'text': json.dumps(['thumbnail', {
-                'media': {
-                    'id': media.id,
-                    'thumbnail': media.thumbnail.url if media.thumbnail else None,
-                }
-            }
-        ])})
-
-    @classmethod
     def process(cls, media):
         """Extract thumbnail from image or video's screenshot"""
         logger.debug("extract thumbnail")
-
-        if media.media_type == media.MEDIA_IMAGE:
-            source = media.content
-        elif media.media_type == media.MEDIA_VIDEO:
-            source = media.screenshot
-        else:
-            # Nothing to do
-            return
-
-        thumbnail_file = SimpleUploadedFile(name='thumbnail.jpg', content=b'', content_type='image/jpeg')
-
-        try:
-            with open(source.path, 'rb') as f:
-                media.thumbnail = cls.generate_thumbnail_from_fp(f=f, target=thumbnail_file,
-                                                                 needed_rotate_degree=media.needed_rotate_degree)
-        except OSError as ex:
-            # Fallback to embed thumbnail
-            logger.warning(f'Failed to generate thumbnail from {media.mimetype!r} file => try embed resource')
-            with tempfile.TemporaryFile('w+b') as embed_image:
-                # Use biggest image to generate thumbnail
-                extract_any_embed_image(media.metadata, source.path, target=embed_image, biggest=True)
-
-                media.thumbnail = cls.generate_thumbnail_from_fp(f=embed_image, target=thumbnail_file,
-                                                                 needed_rotate_degree=media.needed_rotate_degree)
-
-    @classmethod
-    def generate_thumbnail_from_fp(cls, f, target, needed_rotate_degree):
-        with Image.open(f) as image:
-            image.thumbnail(**cls.THUMBNAIL_RESIZE_SETTINGS)
-            # TODO: Sharpen by taste or multi-step downsampling
-
-            # Rotate thumbnail, not whole image
-            if needed_rotate_degree:
-                # PIL rotate rotates counter clockwise => invert it
-                thumbnail = image.rotate(-needed_rotate_degree, expand=True)
-            else:
-                thumbnail = image
-
-            thumbnail.save(target, **cls.THUMBNAIL_SETTINGS)
-        return target
 
 
 class ClassifyMediaState(MediaState):
