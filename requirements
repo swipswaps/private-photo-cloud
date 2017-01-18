@@ -1,8 +1,6 @@
 # All dependencies must be frozen
 
-#Django==1.11              # web framework, last stable version
-# Use latest from master they release 1.11
-https://github.com/django/django/archive/master.tar.gz
+Django==1.11a1              # web framework, last stable version
 
 six==1.10.0                 # core for py2+3 <- Django
 pytz==2016.10               # timezones for Python <- Django
@@ -27,9 +25,7 @@ Pillow==4.0.0               # image processing library
 
 # Enable upstream once fixed on Alpine
 # python-magic==0.4.13        # recognize content type by content
-#https://github.com/ahupp/python-magic/archive/master.tar.gz
-# Use fork till they fix crash on Alpine
-https://github.com/krallin/python-magic/archive/master.tar.gz
+https://github.com/ahupp/python-magic/archive/master.tar.gz
 
 celery==4.0.2               # background worker
 billiard==3.5.0.2           # <- celery
