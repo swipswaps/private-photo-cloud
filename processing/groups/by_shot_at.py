@@ -3,7 +3,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def process(session_id=None, media_id=None):
+def GroupMediaByShotAt(media_id=None):
     from storage.models import Media
 
     # as a first version, we check for every image we got -- not aggregate by shot_at
@@ -38,7 +38,8 @@ def process(session_id=None, media_id=None):
     else:
         shot_id = Media.get_next_shot_id()
 
-    Media.objects.filter(id__in=[m.id for m in shot_media]).update(shot_id=shot_id)
+    num = Media.objects.filter(id__in=[m.id for m in shot_media]).update(shot_id=shot_id)
+    return 'num', num
 
     # TODO: Consider other checks since they are more strict
     # TODO: Add check for identical Media.camera

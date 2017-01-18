@@ -31,3 +31,8 @@ def calculate_metadata(media_id):
 @shared_task
 def categorize(media_id):
     ProcessingState.run(state_code=ProcessingState.STATE_CATEGORIES, media_id=media_id)
+
+
+@shared_task
+def group(media_id):
+    ProcessingState.run(state_code=ProcessingState.STATE_GROUPS, media_id=media_id)

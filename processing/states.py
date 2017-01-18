@@ -12,6 +12,7 @@ class ProcessingState:
     STATE_PLAY_MEDIA = 15
     STATE_METADATA = 20
     STATE_CATEGORIES = 25
+    STATE_GROUPS = 30
 
     STATES = (
         State(STATE_INITIAL, 'processing.tasks.initial_state', None),
@@ -20,6 +21,7 @@ class ProcessingState:
         State(STATE_PLAY_MEDIA, 'processing.tasks.generate_play', 'processing.play_media.run'),
         State(STATE_METADATA, 'processing.tasks.calculate_metadata', 'processing.metadata.run'),
         State(STATE_CATEGORIES, 'processing.tasks.categorize', 'processing.categories.run'),
+        State(STATE_GROUPS, 'processing.tasks.group', 'processing.groups.run'),
     )
 
     @classmethod
@@ -36,8 +38,13 @@ class ProcessingState:
 
         if state.command:
             command = pydoc.locate(state.command)
-            command(media_id=media_id)
-            Media.objects.filter(id=media_id).update(processing_state_code=state.code)
+            try:
+                command(media_id=media_id)
+                Media.objects.filter(id=media_id).update(processing_state_code=state.code)
+            except Exception:
+                # TODO: Ensure we commit changes here despite of exception later
+                Media.objects.filter(id=media_id).update(processing_state_code=-state.code)
+                raise
 
         if next_state and next_state.task:
             task = pydoc.locate(next_state.task)

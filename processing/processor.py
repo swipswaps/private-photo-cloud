@@ -35,7 +35,7 @@ class DataProcessor:
 
         self.logger.info('INPUT: %r', kwargs)
 
-        for i, (args, fn, path) in enumerate(self.PROCESSORS_DATA):
+        for args, fn, path in self.PROCESSORS_DATA:
             input_data = data if args is self.ALL_ARGUMENTS else {k: data[k] for k in args}
             try:
                 results = fn(**input_data)
@@ -56,8 +56,8 @@ class DataProcessor:
 
             data.update(results)
 
-            if i:
-                # skip results for first iteraton
+            if 'ARGS' not in args:
+                # skip results for special loader
                 self.logger.info('%s: %r', path, results)
 
         # Return not all intermediary variables but result of last command
