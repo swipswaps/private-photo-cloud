@@ -46,11 +46,7 @@ class Shot(ShotConstMixin, models.Model):
     height = models.IntegerField()
     duration_seconds = models.IntegerField(null=True, blank=True)
 
-    thumbnail = models.ImageField(
-        blank=True,
-        width_field='thumbnail_width',
-        height_field='thumbnail_height',
-    )
+    thumbnail = models.FileField(blank=True)
     thumbnail_width = models.IntegerField(null=True, blank=True)
     thumbnail_height = models.IntegerField(null=True, blank=True)
 
@@ -120,20 +116,11 @@ class Media(MediaConstMixin, models.Model):
     source_lastmodified = models.DateTimeField(null=True)
     sha1_b85 = models.CharField(max_length=25, db_index=True)
 
-    screenshot = models.ImageField(
-        blank=True,
-        width_field='width',
-        height_field='height',
-        upload_to=generate_screenshot_filename,
+    screenshot = models.FileField(blank=True, upload_to=generate_screenshot_filename,
         help_text=_('Image taken from the video, sized 1:1 to rotated video')
     )
 
-    thumbnail = models.ImageField(
-        blank=True,
-        width_field='thumbnail_width',
-        height_field='thumbnail_height',
-        upload_to=generate_thumbnail_filename
-    )
+    thumbnail = models.FileField(blank=True, upload_to=generate_thumbnail_filename)
     thumbnail_width = models.IntegerField(null=True, blank=True)
     thumbnail_height = models.IntegerField(null=True, blank=True)
 
