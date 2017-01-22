@@ -2,8 +2,8 @@ from processing.media_processors import is_image, is_video
 from storage.const import MediaConstMixin
 
 
-def CategoriesToSet(categories=None):
-    return 'categories', set(categories) if categories else set()
+def EmptyCategories():
+    return 'categories', set()
 
 
 def CategoriesToTuple(categories=None):

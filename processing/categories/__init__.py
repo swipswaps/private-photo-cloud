@@ -16,7 +16,7 @@ TODO:
 
 PROCESSORS = (
     'processing.media_processors.get_media_by_id',
-    'processing.categories.simple.CategoriesToSet',
+    'processing.categories.simple.EmptyCategories',
 
     'processing.categories.simple.CategoryTypeByMediaType.run',
     'processing.categories.simple.CategoryAspectRatioByThumbnailSize',
