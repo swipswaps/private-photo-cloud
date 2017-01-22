@@ -5,7 +5,12 @@ from channels.auth import channel_session_user, channel_session_user_from_http
 # Connected to websocket.connect
 @channel_session_user_from_http
 def ws_add(message):
-    # Add them to the right group
+    # confirm connection
+    message.reply_channel.send({
+        "accept": True,
+    })
+
+    # Add consumer to the right group
     # print(f'added WS#{message.reply_channel} to upload-{message.user.id}')
     Group(f'upload-{message.user.id}').add(message.reply_channel)
 
