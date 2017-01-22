@@ -40,6 +40,8 @@ class Thumbnail:
         except OSError as ex:
             raise Thumbnail.SourceImageError(*ex.args)
 
+        size = None, None
+
         try:
             image.thumbnail(**Thumbnail.THUMBNAIL_RESIZE_SETTINGS)
             # TODO: Sharpen by taste or multi-step downsampling
@@ -51,8 +53,13 @@ class Thumbnail:
             else:
                 thumbnail = image
 
+            size = thumbnail.size
             thumbnail.save(target, **Thumbnail.THUMBNAIL_SETTINGS)
         finally:
             image.close()
 
-        return target
+        return {
+            'thumbnail': target,
+            'thumbnail_width': size[0],
+            'thumbnail_height': size[1],
+        }

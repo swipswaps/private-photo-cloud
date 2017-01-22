@@ -10,7 +10,7 @@ def ThumbnailByContentDegree(media_type=None, content=None, needed_rotate_degree
         return
 
     try:
-        return 'thumbnail', Thumbnail.generate_from_path(content.path, needed_rotate_degree=needed_rotate_degree)
+        return Thumbnail.generate_from_path(content.path, needed_rotate_degree=needed_rotate_degree)
     except Thumbnail.SourceImageError:
         return 'thumbnail', None
 
@@ -30,4 +30,4 @@ def ThumbnailByExiftoolMetadataEmbedContentDegree(media_type=None, thumbnail=Non
         # Use biggest image to generate thumbnail
         extract_any_embed_image(metadata['exiftool'], content.path, target=embed_image, biggest=True)
 
-        return 'thumbnail', Thumbnail.generate_from_file(embed_image, needed_rotate_degree=needed_rotate_degree)
+        return Thumbnail.generate_from_file(embed_image, needed_rotate_degree=needed_rotate_degree)
