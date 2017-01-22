@@ -28,6 +28,7 @@
     background-repeat: no-repeat;
     background-size: cover;
     cursor: pointer;
+    border: solid 1px #666;
 }
 
 .media_video {
