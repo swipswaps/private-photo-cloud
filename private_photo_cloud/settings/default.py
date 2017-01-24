@@ -4,6 +4,7 @@ import django_cache_url
 import dj_email_url
 
 from .factory_defaults import *
+from tzlocal import get_localzone
 
 DEBUG = (os.environ.get('DJANGO_DEBUG') == '1')
 TEMPLATES[0]['OPTIONS']['debug'] = (os.environ.get('DJANGO_TEMPLATE_DEBUG') == '1')
@@ -21,6 +22,8 @@ SESSION_ENGINE = "django.contrib.sessions.backends.cache"
 SESSION_CACHE_ALIAS = "persistent"
 
 locals().update(dj_email_url.config())
+
+TIME_ZONE = get_localzone().zone
 
 INSTALLED_APPS = [
     'django.contrib.admin',
