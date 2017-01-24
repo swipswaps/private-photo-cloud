@@ -42,7 +42,7 @@ channels==1.0.2             # WebSockets for Django + sort of event-driven
 daphne==1.0.1               # <- channels
 asgiref==1.0.0              # <- channels
 autobahn==0.17.1            # daphne <- channels
-Twisted==16.7.0rc2          # daphne <- channels
+Twisted==16.6.0             # daphne <- channels. Use stable version here to prevent WS close
 txaio==2.6.0                # autobahn <- daphne <- channels
 zope.interface==4.3.3       # twisted <- daphne <- channels
 constantly==15.1.0          # twisted <- daphne <- channels
