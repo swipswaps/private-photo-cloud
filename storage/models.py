@@ -54,9 +54,11 @@ class Shot(ShotConstMixin, models.Model):
 class Media(MediaConstMixin, models.Model):
     content_extension = None
 
+    CONTENT_FILENAME_TMPL = 'content/{uploader_id}/{show_at:%Y%m/%d-%H%M%S}_{sha1_hex}{content_extension}'
+
     @staticmethod
     def generate_content_filename_permanent(uploader_id=None, show_at=None, sha1_hex=None, size_bytes=None, content_extension=None):
-        return 'content/{uploader_id}/{show_at:%Y%m}/{sha1_hex}_{size_bytes}{content_extension}'.format(
+        return Media.CONTENT_FILENAME_TMPL.format(
             uploader_id=uploader_id,
             show_at=show_at,
             sha1_hex=sha1_hex,
