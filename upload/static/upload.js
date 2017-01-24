@@ -711,6 +711,7 @@ window.addEventListener("DOMContentLoaded", initUpload, true);
 let socket = new WebSocket(window.WEBSOCKET_URL);
 
 socket.onmessage = function (e) {
+    console.log('socket message', e);
     let data = JSON.parse(e.data);
     let url = data[0];
     let file_obj = data[1];
