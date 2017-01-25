@@ -1,11 +1,15 @@
 'use strict';
 
-// import 'normalize-css/normalize.css';
+import info from '../img/info.svg';
+
+import 'normalize-css/normalize.css';
 import '../css/common.css';
 import '../css/upload.css';
 
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
+
+import {onDomLoaded} from './helpers';
 
 class UploadApp extends Component {
     componentDidMount() {
@@ -22,6 +26,6 @@ class UploadApp extends Component {
 }
 
 
-document.addEventListener('DOMContentLoaded', () => {
+onDomLoaded().then(() => {
     ReactDOM.render(<UploadApp />, document.getElementById('root'));
 });
