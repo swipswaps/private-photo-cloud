@@ -1,15 +1,3 @@
 version: '2'
 
 services:
-  frontend:
-    build:
-      context: .
-      dockerfile: frontend.Dockerfile
-    volumes:
-      - ./frontend/public:/home/app/public
-      - ./frontend/src:/home/app/src
-      - ./frontend/build:/home/app/build
-    working_dir: /home/app
-    ports:
-      - 3000:3000
-    command: npm start

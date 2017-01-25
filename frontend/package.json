@@ -1,18 +1,45 @@
 {
-  "name": "app",
+  "name": "private_photo_cloud",
   "version": "0.1.0",
-  "private": true,
-  "devDependencies": {
-    "react-scripts": "0.7.0"
-  },
-  "dependencies": {
-    "react": "^15.3.2",
-    "react-dom": "^15.3.2"
+  "description": "Private Photo Hosting",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/askoretskiy/private-photo-cloud.git"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
+    "compile": "webpack",
+    "dev": "webpack-dev-server"
+  },
+  "author": "Artem Skoretskiy <artem.skoretskiy@gmail.com>",
+  "license": "GPL-3.0",
+  "dependencies": {
+    "babel-polyfill": "^6.22.0",
+    "js-cookie": "^2.1.3",
+    "react": "^15.4.2",
+    "react-dom": "^15.4.2"
+  },
+  "devDependencies": {
+    "autoprefixer": "^6.7.0",
+    "babel-core": "^6.22.1",
+    "babel-loader": "^6.2.10",
+    "babel-plugin-react-transform": "^2.0.2",
+    "babel-preset-es2015": "^6.22.0",
+    "babel-preset-es2016": "^6.22.0",
+    "babel-preset-es2017": "^6.22.0",
+    "babel-preset-react": "^6.22.0",
+    "css-loader": "^0.26.1",
+    "extract-text-webpack-plugin": "^1.0.1",
+    "file-loader": "^0.9.0",
+    "image-webpack-loader": "^3.1.0",
+    "normalize-css": "^2.3.1",
+    "postcss": "^5.2.11",
+    "postcss-color-short": "^0.2.3",
+    "postcss-focus": "^1.0.0",
+    "postcss-loader": "^1.2.2",
+    "postcss-short-size": "^2.0.1",
+    "react-transform-hmr": "^1.0.4",
+    "style-loader": "^0.13.1",
+    "webpack": "^1.14.0",
+    "webpack-dev-server": "^1.16.2"
   }
 }

@@ -6,6 +6,12 @@
 	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}catalog.css" />
 	<script type="text/javascript" src="{% url 'javascript-catalog' packages='catalog' %}"></script>
 	<script src="{{ STATIC_URL }}catalog.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}public/common.css" />
+	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}public/catalog.css" />
+	<script src="{{ STATIC_URL }}public/common.js"></script>
+	<script src="{{ STATIC_URL }}public/catalog.js"></script>
+
 	<script>
 		const MEDIA_URL = '{{ MEDIA_URL|escapejs }}';
 		const STATIC_URL = '{{ STATIC_URL|escapejs }}';
@@ -23,6 +29,8 @@
 
 <h2>By date</h2>
 <div id="months"></div>
+
+<div id="root"></div>
 
 <p><a href="{% url "upload:upload" %}">Upload files</a></p>
 

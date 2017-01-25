@@ -47,8 +47,6 @@ services:
       - .:/home/app
       - ./media:/home/app/media
     working_dir: /home/app
-    ports:
-      - 80:80
     restart: unless-stopped
     command:
       - sh
@@ -59,7 +57,7 @@ services:
         done;
         ./manage.py migrate;
         ./manage.py shell -c 'from django.contrib.auth.models import User; u, _ = User.objects.get_or_create(username="admin", is_superuser=True, is_staff=True, is_active=True);u.set_password("password");u.save();';
-        exec ./manage.py runserver 0.0.0.0:80 --noasgi;
+        exec ./manage.py runserver 0.0.0.0:8000 --noasgi;
   worker:
     <<: *BACKEND
     ports: []
@@ -107,3 +105,17 @@ services:
       - runworker
 # listen only websockets, ignore HTTP (while served by another instance)
       - --only-channels=websocket.*
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend.Dockerfile
+    links:
+      - backend
+    volumes:
+      - ./frontend/js:/home/app/js
+      - ./frontend/css:/home/app/css
+      - ./frontend/img:/home/app/img
+    ports:
+    # internal and external port must be the same to keep websockets work
+      - 80:80
+    command: "npm run dev -- --host 0.0.0.0 --port 80 --hot"

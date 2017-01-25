@@ -10,9 +10,17 @@
 		window.WEBSOCKET_URL = "ws://{{ WEBSOCKET_URL|escapejs }}";
 	</script>
 	<script src="{{ STATIC_URL }}upload.js"></script>
+
+	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}public/common.css" />
+	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}public/upload.css" />
+	<script src="{{ STATIC_URL }}public/common.js"></script>
+	<script src="{{ STATIC_URL }}public/upload.js"></script>
+
 </head>
 <body>
 <h1>Upload</h1>
+
+<div id="root"></div>
 
 <p>Please drop you files anywhere
 	or <button onClick="document.getElementById('file_input').click(event); return false;">select files</button>
