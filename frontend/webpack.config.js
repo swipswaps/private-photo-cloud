@@ -9,7 +9,7 @@ module.exports = {
     entry: {
         catalog: './catalog',
         upload: './upload',
-        common: ["babel-polyfill", "react", "react-dom"]
+        common: ["react", "react-dom"]
     },
     output: {
         path: path.resolve(__dirname, "public"),
@@ -19,42 +19,64 @@ module.exports = {
         sourceMapFilename: "[file].map"
     },
     module: {
-        loaders: [
-            {test: /\.js$/, exclude: /node_modules/, loader: "babel-loader"},
+        rules: [
             {
-                test: /\.css$/, exclude: /node_modules/, loader: ExtractTextPlugin.extract(
-                "style-loader",
-                ["css-loader?importLoaders=1",
-                    "postcss-loader"]
-            )
+                test: /\.js$/,
+                exclude: /node_modules/,
+                loader: "babel-loader"
             },
             {
-                test: /\.(jpg|jpeg|png|gif|svg)$/i, loaders: [
-                'file?hash=md5&digest=hex&name=[name].[hash].[ext]',
-                'image-webpack'
-            ]
-            }
-        ]
-    },
-    imageWebpackLoader: {
-        optimizationLevel: (NODE_ENV === 'development') ? 1 : 7,
-        interlaced: false,
-        mozjpeg: {
-            quality: 65
-        },
-        pngquant: {
-            quality: "65-90",
-            speed: 4
-        },
-        svgo: {
-            plugins: [
-                {removeViewBox: false},
-                {removeEmptyAttrs: false}
-            ]
-        }
+                test: /\.css$/,
+                loader: ExtractTextPlugin.extract({
+                    fallbackLoader: 'style-loader',
+                    loader: [
+                        {
+                            loader: 'css-loader',
+                            query: {
+                                discardComments: {removeAll: true}
+                            }
+                        },
+                        {
+                            loader: 'postcss-loader',
+                        }
+                    ]
+                }),
+            },
+            {
+                test: /.*\.(gif|png|jpg|jpeg|svg)$/i,
+                loaders: [
+                    {
+                        loader: "file-loader",
+                        query: {
+                            hash: "md5",
+                            digest: "hex",
+                            name: '[name].[hash].[ext]'
+                        }
+                    },
+                    {
+                        loader: 'image-webpack-loader',
+                        query: {
+                            progressive: true,
+                            optimizationLevel: (NODE_ENV === 'development') ? 1 : 7,
+                            interlaced: false,
+                            mozjpeg: {quality: 65},
+                            pngquant: {
+                                quality: '65-90',
+                                speed: 4
+                            },
+                            svgo: {
+                                plugins: [
+                                    {removeViewBox: false},
+                                    {removeEmptyAttrs: false}
+                                ]
+                            }
+                        }
+                    }
+                ]
+            }]
     },
     plugins: [
-        new webpack.NoErrorsPlugin(),
+        new webpack.NoEmitOnErrorsPlugin(),
         new webpack.DefinePlugin({
             NODE_ENV: JSON.stringify(NODE_ENV),
             'process.env': {
@@ -62,15 +84,13 @@ module.exports = {
             },
             LANG: JSON.stringify('en')
         }),
-        new webpack.optimize.DedupePlugin(),
         new webpack.optimize.CommonsChunkPlugin({name: "common"}),
-        new ExtractTextPlugin("[name].css"),
+        new ExtractTextPlugin({filename: "[name].css", allChunks: true}),
     ],
-    devtool: (NODE_ENV === 'development') ? 'cheap-module-source-map' : null,
+    devtool: (NODE_ENV === 'development') ? 'cheap-module-source-map' : false,
     devServer: {
         contentBase: './',
         inline: true,
-        progress: true,
         noInfo: true,   // do not print tons or debug info
         proxy: {
             '/': {target: 'http://backend:8000'}
@@ -79,11 +99,18 @@ module.exports = {
 };
 
 if (NODE_ENV === "production") {
+    console.log('Compress...');
+    module.exports.plugins.unshift(
+        new webpack.LoaderOptionsPlugin({
+            minimize: true,
+            debug: false
+        })
+    );
     module.exports.plugins.push(
         // Minify the code. You need ES5 here -- see https://github.com/mishoo/UglifyJS2/issues/448
         new webpack.optimize.UglifyJsPlugin({
-            compress: {warnings: false},
-            output: {comments: false}
+            output: {comments: false},
+            compressor: {warnings: false}
         })
     );
 }
