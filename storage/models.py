@@ -134,6 +134,7 @@ class Media(MediaConstMixin, models.Model):
     gps_latitude = models.FloatField(null=True, blank=True)
     gps_longitude = models.FloatField(null=True, blank=True)
     gps_altitude_m = models.FloatField(null=True, blank=True)
+    gps_precision_m = models.FloatField(null=True, blank=True)
 
     # TODO: Add field to store view-optimized content
 

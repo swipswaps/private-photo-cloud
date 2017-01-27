@@ -15,7 +15,7 @@ def dms_dict2dd(degrees=0, minutes=0, seconds=0, direction='N'):
 
 
 RE_DMS = re.compile(
-    r'''^(?P<degrees>\d+)\s*(deg|°)\s*(?P<minutes>\d+)\s*'\s*(?P<seconds>\d+([.]\d+)?)\s*"\s*(?P<direction>[NSEW])?$'''
+    r'''(?i)^(?P<degrees>\d+)\s*(deg|°)\s*(?P<minutes>\d+)\s*'\s*(?P<seconds>\d+([.]\d+)?)\s*"\s*(?P<direction>[NSEW])?$'''
 )
 
 
@@ -47,7 +47,7 @@ def dms2dd(text):
         return dms_dict2dd(**m)
 
 
-RE_ALTITUDE = re.compile(r'^(?i)(?P<meters>[-]?\d+([.]\d+)?)\s*m\s*(Above Sea Level)?$')
+RE_ALTITUDE = re.compile(r'(?i)^(?P<meters>[-]?\d+([.]\d+)?)\s*m\s*(Above Sea Level)?$')
 
 
 def alt2m(text):
@@ -65,10 +65,27 @@ def alt2m(text):
         return float(m.group('meters'))
 
 
+RE_M = re.compile(r'(?i)^(?P<meters>[-]?\d+([.]\d+)?)\s*m$')
+
+
+def text2m(text):
+    """
+    >>> text2m('48.33654877 m')
+    48.33654877
+    """
+    if not text:
+        return
+
+    m = RE_M.search(text)
+    if m:
+        return float(m.group('meters'))
+
+
 class GPSByExiftoolMetadata:
-    RE_LATITUDE = re.compile('(?i)GPSLatitude$')    # Composite:GPSLatitude  | EXIF:GPSLatitude
+    RE_LATITUDE = re.compile('(?i)GPSLatitude$')  # Composite:GPSLatitude  | EXIF:GPSLatitude
     RE_LONGITUDE = re.compile('(?i)GPSLongitude$')  # Composite:GPSLongitude | EXIF:GPSLongitude
-    RE_ALTITUDE = re.compile('(?i)GPSAltitude$')    # Composite:GPSAltitude  | EXIF:GPSAltitude
+    RE_ALTITUDE = re.compile('(?i)GPSAltitude$')  # Composite:GPSAltitude  | EXIF:GPSAltitude
+    PRECISION = 'EXIF:GPSHPositioningError'
 
     @staticmethod
     def run(metadata):
@@ -79,4 +96,5 @@ class GPSByExiftoolMetadata:
             'gps_latitude': dms2dd(get_re_keys_filled_value(metadata['exiftool'], GPSByExiftoolMetadata.RE_LATITUDE)),
             'gps_longitude': dms2dd(get_re_keys_filled_value(metadata['exiftool'], GPSByExiftoolMetadata.RE_LONGITUDE)),
             'gps_altitude_m': alt2m(get_re_keys_filled_value(metadata['exiftool'], GPSByExiftoolMetadata.RE_ALTITUDE)),
+            'gps_precision_m': text2m(metadata['exiftool'].get(GPSByExiftoolMetadata.PRECISION)),
         }
