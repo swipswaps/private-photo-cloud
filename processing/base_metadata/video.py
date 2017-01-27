@@ -1,7 +1,7 @@
 import datetime
 
 from processing.media_processors import is_video
-from storage.helpers import resolve_dict, get_first_filled_value
+from storage.helpers import resolve_dict, get_filled_value
 
 
 def FfprobeMetadataByContent(media_type=None, content=None, metadata=None):
@@ -70,7 +70,7 @@ class ShotAtByFfprobeMetadata:
         if not is_video(media_type=media_type):
             return
 
-        shot_date = get_first_filled_value(ShotAtByFfprobeMetadata.get_shot_dates(metadata=metadata['ffprobe']))
+        shot_date = get_filled_value(ShotAtByFfprobeMetadata.get_shot_dates(metadata=metadata['ffprobe']))
 
         if shot_date:
             return 'shot_at', ShotDate.parse(shot_date)

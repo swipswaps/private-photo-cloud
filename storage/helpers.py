@@ -3,7 +3,7 @@ import base64
 import binascii
 
 
-def get_first_filled_value(values):
+def get_filled_value(values):
     # works better on long sequence: return next(filter(None, values), None)
     # loop works best on short sequence
     for value in values:
@@ -11,8 +11,8 @@ def get_first_filled_value(values):
             return value
 
 
-def get_first_filled_key(data, keys):
-    return get_first_filled_value(data.get(k) for k in keys)
+def get_keys_filled_value(data, keys):
+    return get_filled_value(data.get(k) for k in keys)
 
 
 def resolve_dict(path, data):

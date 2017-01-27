@@ -4,7 +4,7 @@ import re
 from django.utils import timezone
 
 from processing.media_processors import is_image
-from storage.helpers import get_first_filled_key
+from storage.helpers import get_keys_filled_value
 
 
 class DegreeByExiftoolMetadata:
@@ -24,7 +24,7 @@ class DegreeByExiftoolMetadata:
         if not is_image(media_type=media_type):
             return
 
-        orientation = get_first_filled_key(metadata['exiftool'], DegreeByExiftoolMetadata.KEYS_IMAGE_ORIENTATION)
+        orientation = get_keys_filled_value(metadata['exiftool'], DegreeByExiftoolMetadata.KEYS_IMAGE_ORIENTATION)
 
         if not orientation:
             # Was not found -- prompt user to rotate
@@ -91,10 +91,10 @@ class SizeCameraByExiftoolMetadata:
         if not is_image(media_type=media_type):
             return
 
-        yield 'camera', get_first_filled_key(metadata['exiftool'], SizeCameraByExiftoolMetadata.KEYS_IMAGE_CAMERA) or ''
+        yield 'camera', get_keys_filled_value(metadata['exiftool'], SizeCameraByExiftoolMetadata.KEYS_IMAGE_CAMERA) or ''
 
-        width = get_first_filled_key(metadata['exiftool'], SizeCameraByExiftoolMetadata.KEYS_IMAGE_WIDTH)
-        height = get_first_filled_key(metadata['exiftool'], SizeCameraByExiftoolMetadata.KEYS_IMAGE_HEIGHT)
+        width = get_keys_filled_value(metadata['exiftool'], SizeCameraByExiftoolMetadata.KEYS_IMAGE_WIDTH)
+        height = get_keys_filled_value(metadata['exiftool'], SizeCameraByExiftoolMetadata.KEYS_IMAGE_HEIGHT)
 
         assert width and height
 
@@ -155,7 +155,7 @@ class ShotAtByExiftoolMetadata:
         if not is_image(media_type=media_type):
             return
 
-        shot_date = get_first_filled_key(metadata['exiftool'], ShotAtByExiftoolMetadata.KEYS_IMAGE_SHOOT)
+        shot_date = get_keys_filled_value(metadata['exiftool'], ShotAtByExiftoolMetadata.KEYS_IMAGE_SHOOT)
 
         if shot_date:
             return 'shot_at', ShotDate.parse(shot_date)

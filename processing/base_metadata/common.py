@@ -4,7 +4,7 @@ from django.db.models.fields.files import FieldFile
 
 from processing.media_processors import is_image, is_video
 from storage.const import MediaConstMixin
-from storage.helpers import get_first_filled_value, base85_to_hex
+from storage.helpers import get_filled_value, base85_to_hex
 
 
 def MimetypeByContent(content=None):
@@ -77,7 +77,7 @@ class ContentByExtensionShowAt:
             show_at=show_at,
             sha1_hex=base85_to_hex(sha1_b85),
             size_bytes=size_bytes,
-            content_extension=get_first_filled_value(
+            content_extension=get_filled_value(
                 ContentByExtensionShowAt.get_content_extension(mimetype=mimetype, source_filename=source_filename)
             )
         )
