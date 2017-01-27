@@ -3,7 +3,11 @@ import logging
 from processing.processor import DataProcessor
 
 PROCESSORS = (
-    # TODO: Implement
+    'processing.media_processors.get_media_by_id',
+
+    'processing.metadata.gps.GPSByExiftoolMetadata.run',
+
+    'processing.media_processors.save_media',
 )
 
 

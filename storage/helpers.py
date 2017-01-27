@@ -15,6 +15,10 @@ def get_keys_filled_value(data, keys):
     return get_filled_value(data.get(k) for k in keys)
 
 
+def get_re_keys_filled_value(data, key_re):
+    return get_filled_value(v for k, v in data.items() if key_re.search(k))
+
+
 def resolve_dict(path, data):
     """
     Resolve dict item by path (split by ':').
