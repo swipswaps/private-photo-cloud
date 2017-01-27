@@ -131,6 +131,10 @@ class Media(MediaConstMixin, models.Model):
     shot_id = models.IntegerField(null=True, blank=True)
     camera = models.CharField(max_length=255, blank=True)
 
+    gps_latitude = models.FloatField(null=True, blank=True)
+    gps_longitude = models.FloatField(null=True, blank=True)
+    gps_altitude_m = models.FloatField(null=True, blank=True)
+
     # TODO: Add field to store view-optimized content
 
     @classmethod
