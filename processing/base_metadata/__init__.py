@@ -5,6 +5,8 @@ from processing.processor import DataProcessor
 PROCESSORS = (
     'processing.media_processors.get_media_by_id',
 
+    'processing.base_metadata.common.EmptyMetadata',
+
     'processing.base_metadata.common.MimetypeByContent',
     'processing.base_metadata.common.MediatypeByMimeType.run',
     'processing.base_metadata.common.ExiftoolMetadataByContent',

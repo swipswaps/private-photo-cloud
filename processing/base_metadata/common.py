@@ -31,6 +31,10 @@ def ShowAtByShotAtSourceLastModified(shot_at=None, source_lastmodified=None):
     return 'show_at', source_lastmodified
 
 
+def EmptyMetadata():
+    return 'metadata', {}
+
+
 def ExiftoolMetadataByContent(content=None, media_type=None, metadata=None):
     from storage.tools.exiftool import get_exiftool_info
 
