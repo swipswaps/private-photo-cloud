@@ -6,6 +6,7 @@ PROCESSORS = (
     'processing.media_processors.get_media_by_id',
 
     'processing.metadata.gps.GPSByExiftoolMetadata.run',
+    'processing.metadata.geo_location.LocationByGPS',
 
     'processing.media_processors.save_media',
 )

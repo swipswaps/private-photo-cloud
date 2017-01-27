@@ -49,6 +49,7 @@ services:
     working_dir: /home/app
     restart: unless-stopped
     command:
+    # have to use noreload to prevent sudden crash when using requests module
       - sh
       - -ec
       - until psql $$DATABASE_URL -c "--" 2>/dev/null; do
@@ -57,7 +58,7 @@ services:
         done;
         ./manage.py migrate;
         ./manage.py shell -c 'from django.contrib.auth.models import User; u, _ = User.objects.get_or_create(username="admin", is_superuser=True, is_staff=True, is_active=True);u.set_password("password");u.save();';
-        exec ./manage.py runserver 0.0.0.0:8000 --noasgi;
+        exec ./manage.py runserver 0.0.0.0:8000 --noasgi --noreload;
   worker:
     <<: *BACKEND
     ports: []
