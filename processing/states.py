@@ -1,5 +1,6 @@
 import pydoc
 from collections import namedtuple
+from itertools import zip_longest
 
 State = namedtuple('State', ['code', 'task', 'command'])
 
@@ -24,14 +25,14 @@ class ProcessingState:
         State(STATE_GROUPS, 'processing.tasks.group', 'processing.groups.run'),
     )
 
+    STATES_DICT = {state.code: (state, next_state)
+                   for state, next_state in zip_longest(STATES, STATES[1:])}
+
     @classmethod
     def run(cls, state_code, media_id):
         from storage.models import Media
 
-        # create iterator to be able to find "next" state
-        states = iter(cls.STATES)
-        state = next((state for state in states if state.code == state_code), None)
-        next_state = next(states, None)
+        state, next_state = cls.STATES_DICT.get(state_code, (None, None))
 
         if not state:
             raise NotImplementedError(state_code)
