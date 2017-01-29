@@ -53,8 +53,10 @@ incremental==16.10.1        # twisted <- daphne <- channels
 asgi_redis==1.0.0           # needed for daphne
 msgpack-python==0.4.8       # <- asgi_redis
 
-geocoder==1.20.0            # geocoding / -decoding library
-requests==2.13.0            # <- geocoder
-click==6.7                  # <- geocoder
-ratelim==0.1.6              # <- geocoder
-decorator==4.0.11           # <- ratelim <- geocoder
+geopy==1.11.0               # geocoding / -decoding
+
+# TODO: Install GeoDjango, including GDAL (missing from Alpine)
+
+# django-postgres-geometry
+# https://github.com/expobrain/django-postgres-geometry/archive/0.1.3.tar.gz
+# TODO: Install once compatible with Django 1.11

@@ -1,5 +1,6 @@
 import re
 
+from lib.point_field import Point
 from storage.helpers import get_re_keys_filled_value
 
 
@@ -92,9 +93,12 @@ class GPSByExiftoolMetadata:
         if not metadata.get('exiftool'):
             return
 
+        point = Point(dms2dd(get_re_keys_filled_value(metadata['exiftool'], GPSByExiftoolMetadata.RE_LATITUDE)),
+                 dms2dd(get_re_keys_filled_value(metadata['exiftool'], GPSByExiftoolMetadata.RE_LONGITUDE))
+                 )
+
         return {
-            'gps_latitude': dms2dd(get_re_keys_filled_value(metadata['exiftool'], GPSByExiftoolMetadata.RE_LATITUDE)),
-            'gps_longitude': dms2dd(get_re_keys_filled_value(metadata['exiftool'], GPSByExiftoolMetadata.RE_LONGITUDE)),
+            'gps_location': point if point.x and point.y else None,
             'gps_altitude_m': alt2m(get_re_keys_filled_value(metadata['exiftool'], GPSByExiftoolMetadata.RE_ALTITUDE)),
             'gps_precision_m': text2m(metadata['exiftool'].get(GPSByExiftoolMetadata.PRECISION)),
         }

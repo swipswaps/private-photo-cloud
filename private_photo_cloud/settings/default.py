@@ -35,6 +35,8 @@ INSTALLED_APPS = [
     'channels', # we must disable ASGI for main upload flow and use it for WebSockets only (slow, no huge files)
     'rest_framework',
     'crispy_forms',
+    'django.contrib.postgres',
+    # 'django.contrib.gis', # TODO: Install and enable
 
     'storage',
     'upload',

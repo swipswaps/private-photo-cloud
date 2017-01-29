@@ -2,7 +2,12 @@ import os
 
 import logging
 from django.conf import settings
-from django.contrib.postgres.fields import JSONField, ArrayField
+
+# Do not use django.contrib.gis while it not easy to install
+# from postgres_geometry.fields import PointField
+from lib.point_field import PointField
+
+from django.contrib.postgres.fields import JSONField, ArrayField, HStoreField
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext_lazy as _
@@ -131,10 +136,11 @@ class Media(MediaConstMixin, models.Model):
     shot_id = models.IntegerField(null=True, blank=True)
     camera = models.CharField(max_length=255, blank=True)
 
-    gps_latitude = models.FloatField(null=True, blank=True)
-    gps_longitude = models.FloatField(null=True, blank=True)
-    gps_altitude_m = models.FloatField(null=True, blank=True)
+    gps_location = PointField(null=True, blank=True)
     gps_precision_m = models.FloatField(null=True, blank=True)
+    gps_altitude_m = models.FloatField(null=True, blank=True)
+
+    location = HStoreField(blank=True, default=dict)
 
     # TODO: Add field to store view-optimized content
 
