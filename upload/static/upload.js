@@ -109,7 +109,7 @@ function checkFolderSupport(dataTransfer) {
 
 function uploadEntries(entries) {
     for(let entry of entries) {
-        if(entry.name[0] == '.') {
+        if(entry.name[0] === '.') {
             console.warn(`Ignored file: ${entry.name}`);
             continue;
         }
@@ -224,10 +224,10 @@ function getSizeGroup(size) {
 
 function getTypeGroup(type) {
     type = type.split('/')[0];
-    if(type == 'image') {
+    if(type === 'image') {
         return 0;
     }
-    if(type == 'video') {
+    if(type === 'video') {
         return 1;
     }
     return 2;
@@ -259,28 +259,6 @@ function sleep(seconds) {
     });
 }
 
-function renderUploadedItem(file_obj) {
-    // Media.id is a hard identifier, no need to use any other unique value, e.g. SHA1 sum
-    let $element;
-
-    if(!file_obj.media.thumbnail) {
-        // media has no thumbnail
-        $element = document.createElement('div');
-    } else  if(file_obj.media.thumbnail === '!') {
-        // image just uploaded, thumbnail would come later
-        $element = document.createElement('img');
-        $element.setAttribute('src', window.PLACEHOLDER_IMAGE_SRC);
-    } else {
-        // thumbnail is ready
-        $element = document.createElement('img');
-        $element.setAttribute('src', file_obj.media.thumbnail);
-    }
-
-    $element.setAttribute('id', `media_${file_obj.media.id}`);
-    $element.classList.add('media');
-    return $element;
-}
-
 function loadImage($element, url) {
     return fetch(url, {credentials: 'same-origin'}
         ).then(function(response) {
@@ -297,22 +275,6 @@ function loadImage($element, url) {
         });
 }
 
-function updateUploadedItem(file_obj) {
-    let $element = document.getElementById(`media_${file_obj.media.id}`);
-    if(!$element) {
-        // element is not present on the screen
-        return;
-    }
-
-    if(file_obj.media.thumbnail) {
-        // quick path -- update image in background
-        loadImage($element, file_obj.media.thumbnail);
-    } else {
-        // replace element
-        $element.parentNode.replaceChild(renderUploadedItem(file_obj), $element);
-    }
-}
-
 function renderUploadProgress(file_obj) {
     let div = document.createElement('div');
     div.setAttribute('id', `upload_${file_obj.id}_progressbar`);
@@ -321,10 +283,10 @@ function renderUploadProgress(file_obj) {
 }
 
 function compareFiles(a, b) {
-    if(a.size_group == b.size_group && a.type_group == b.type_group) {
+    if(a.size_group === b.size_group && a.type_group === b.type_group) {
         return 0;
     }
-    if((a.size_group < b.size_group) || (a.size_group == b.size_group && a.type_group < b.type_group)) {
+    if((a.size_group < b.size_group) || (a.size_group === b.size_group && a.type_group < b.type_group)) {
         return -1;
     }
     return 1;
@@ -489,17 +451,12 @@ function finishFileUpload(file) {
         progress_div.remove();
     }
 
-    let uploaded_div = document.getElementById('uploaded_images');
-
     if(!file.is_duplicate) {
-        let media_div = renderUploadedItem(file);
-
-        let old_media_div = document.getElementById(media_div.id);
-        if(old_media_div) {
-            old_media_div.remove();
-        }
-
-        uploaded_div.appendChild(media_div);
+        // only if file is not a duplicate -- render it on the screen
+        window.uploader.add_media({
+            id: file.media.id,
+            thumbnail: file.media.thumbnail
+        });
     }
 
     processUploadQueue();
@@ -565,6 +522,7 @@ function get_file_sha1(file) {
 function check_duplicate(file) {
     let source_file = files_by_hash[file.sha1];
     if(source_file) {
+        // duplicate means that in the same queue we have elements with the same hash. simply drop it from the queue
         file.is_duplicate = true;
         console.info('Prevented duplicate upload', file, 'base', source_file);
     } else {
@@ -679,7 +637,7 @@ function fetch_w_progress(url, settings, onprogress) {
     let xhr = new XMLHttpRequest();
     xhr.open(settings.method || 'GET', url, true); // async
 
-    if(settings.credentials && settings.credentials != 'omit') {
+    if(settings.credentials && settings.credentials !== 'omit') {
         xhr.withCredentials = true;
     }
 
@@ -716,8 +674,11 @@ socket.onmessage = function (e) {
     let url = data[0];
     let file_obj = data[1];
 
-    if(url == 'thumbnail') {
-        updateUploadedItem(file_obj);
+    if(url === 'thumbnail') {
+        window.uploader.replace_media({
+            id: file_obj.media.id,
+            thumbnail: file_obj.media.thumbnail
+        });
     }
 };
 
