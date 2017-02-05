@@ -20,6 +20,7 @@ def catalog(request):
 @login_required
 def images_months(request):
     qs = Media.objects.filter(uploader=request.user)
+    qs = qs.exclude(show_at=None)   # during upload media could have show_at = None => query would crash
     qs = qs.annotate(month=TruncMonth('show_at')).values_list('month').order_by('month').annotate(Count('id'))
     return JsonResponse({"months": [{'month': m.strftime('%Y-%m'), 'num': num} for m, num in qs]})
 
