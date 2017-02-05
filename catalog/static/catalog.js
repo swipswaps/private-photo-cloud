@@ -16,10 +16,10 @@ function initCatalog() {
     }).then(renderMonths);
 }
 
-function renderMonths(dates) {
+function renderMonths(data) {
     let container = document.getElementById('months');
-    for(let month of dates.months) {
-        container.appendChild(renderMonth(month));
+    for(let m of data.months) {
+        container.appendChild(renderMonth(m.month));
     }
 }
 

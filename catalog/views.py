@@ -1,5 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
+from django.db.models.functions import TruncMonth
 from django.http import JsonResponse
 from django.template.response import TemplateResponse
 
@@ -19,9 +20,8 @@ def catalog(request):
 @login_required
 def images_months(request):
     qs = Media.objects.filter(uploader=request.user)
-    # That gives only dates, no aggregation possible
-    months = sorted(qs.dates('show_at', 'month'))
-    return JsonResponse({"months": [m.strftime('%Y-%m') for m in months]})
+    qs = qs.annotate(month=TruncMonth('show_at')).values_list('month').order_by('month').annotate(Count('id'))
+    return JsonResponse({"months": [{'month': m.strftime('%Y-%m'), 'num': num} for m, num in qs]})
 
 
 MEDIA_FIELDS = (
