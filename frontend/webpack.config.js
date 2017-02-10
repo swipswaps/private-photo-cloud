@@ -28,8 +28,8 @@ module.exports = {
             {
                 test: /\.css$/,
                 loader: ExtractTextPlugin.extract({
-                    fallbackLoader: 'style-loader',
-                    loader: [
+                    fallback: 'style-loader',
+                    use: [
                         {
                             loader: 'css-loader',
                             query: {
@@ -56,10 +56,17 @@ module.exports = {
                     {
                         loader: 'image-webpack-loader',
                         query: {
-                            progressive: true,
-                            optimizationLevel: (NODE_ENV === 'development') ? 1 : 7,
-                            interlaced: false,
-                            mozjpeg: {quality: 65},
+                            gifsicle: {
+                                interlaced: false,
+                            },
+                            mozjpeg: {
+                                quality: 65,
+                                progressive: true,
+                                interlaced: false
+                            },
+                            optipng: {
+                                optimizationLevel: (NODE_ENV === 'development') ? 1 : 7
+                            },
                             pngquant: {
                                 quality: '65-90',
                                 speed: 4
