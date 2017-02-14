@@ -25,3 +25,35 @@ export function onDomLoaded() {
         document.addEventListener('DOMContentLoaded', resolve);
     });
 }
+
+export function formatMonth(text) {
+    text = text.split('-').map(n => Number.parseInt(n));
+    let year = text[0];
+    let month = text[1];
+
+    return `${MONTHS[month]} ${year}`;
+}
+
+export function formatDay(text) {
+    let date = text.split('-').map(n => Number.parseInt(n));
+    let year = date[0];
+    let month = date[1];
+    let day = date[2];
+
+    let day_of_week = (new Date(text)).getDay() || 7;
+
+    return `${DAY_OF_WEEK[day_of_week]}, ${day} ${MONTHS_OF[month]} ${year}`;
+}
+
+export function group_by(data, fn) {
+    let rows;
+    return [...data.map(row => [fn(row), row]).reduce((previousValue, [key, row]) => {
+        rows = previousValue.get(key);
+        if (!rows) {
+            // assign returns the value
+            previousValue.set(key, (rows = []));
+        }
+        rows.push(row);
+        return previousValue;
+    }, new Map()).entries()];
+}

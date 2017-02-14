@@ -9,7 +9,7 @@ import '../css/catalog.css';
 import React, {Component} from 'react';
 import ReactDOM from 'react-dom';
 
-import {onDomLoaded} from './helpers';
+import {formatDay, formatMonth, group_by, onDomLoaded} from './helpers';
 
 
 const HIDPI_SCALE = 2;
@@ -20,7 +20,6 @@ const MEDIA_VIDEO = 2;
 function CatalogApp() {
     return (
         <div className="App">
-            Months:
             <AllYearsCatalog />
         </div>
     );
@@ -45,10 +44,12 @@ class AllYearsCatalog extends Component {
 
     render() {
         return (
-            <ul>
+            <ul className="media_month">
                 {this.state.months.map(m => (
-                    <li key={m.month} onClick={this.toggleMonth.bind(this, m.month, !m.expanded)}>
-                        {m.month} ({m.num})
+                    <li key={m.month}>
+                        <div className="month_name" onClick={this.toggleMonth.bind(this, m.month, !m.expanded)}>
+                            {formatMonth(m.month)} ({m.num})
+                        </div>
                         {m.expanded ? (<MonthCatalog key={m.month} month={m.month} media={m.media} />) : null}
                     </li>
                 ))}
@@ -79,8 +80,24 @@ class AllYearsCatalog extends Component {
 }
 
 function MonthCatalog(props) {
+    console.log();
     return (
-        <ul>
+        <ul className="media_day">
+            {group_by(props.media, m => m.show_at.split('T', 1)[0]).map(([day, media]) => {
+                return (
+                    <li key={day}>
+                        <div className="day_name">{formatDay(day)}</div>
+                        <DateCatalog media={media} />
+                    </li>
+                );
+            })}
+        </ul>
+    );
+}
+
+function DateCatalog(props) {
+    return (
+        <ul className="media_list">
             {props.media.map(media => (<Media media={media} key={media.id} />))}
         </ul>
     );

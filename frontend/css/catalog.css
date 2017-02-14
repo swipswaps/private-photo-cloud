@@ -1,1 +1,43 @@
-#root {color: red;}
+ul.media_month, ul.media_day {
+    padding: 0;
+    margin: 0;
+}
+
+ul.media_month > li, ul.media_day > li {
+    padding: 0 0;
+    margin: 0;
+    list-style-type: none;
+}
+
+.month_name {
+    padding: 0 1em 0 0.5em;
+    margin: 10px 0;
+    font-family: Arial;
+    cursor: pointer;
+}
+
+.day_name {
+    position: sticky;
+    top: 0;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 0.5em 1em 0.5em 1em;
+    margin: 0;
+    font-family: Arial;
+    z-index: 1; /* above play-video button */
+}
+
+ul.media_list {
+    padding: 0 1em 0 3em;
+    margin: 0;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+ul.media_list > li {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: inline-flex;
+}
