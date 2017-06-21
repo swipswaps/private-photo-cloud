@@ -1,18 +1,20 @@
-FROM node:7-alpine
+FROM node:8-alpine
+
+RUN npm install -g salita
 
 WORKDIR /home/app/
 
-RUN PKG="build-base autoconf automake libtool nasm libpng-dev"\
- && apk add --no-cache libpng curl $PKG\
- && npm install gifsicle mozjpeg optipng-bin pngquant-bin\
- && apk del $PKG
-
 COPY frontend/package.json /home/app/
 
-RUN npm install
+RUN PKG="build-base autoconf automake libtool nasm libpng-dev"\
+ && apk add --no-cache libpng curl $PKG\
+ && npm install\
+ && apk del $PKG
 
 COPY frontend /home/app/
 
-RUN NODE_ENV=production ./node_modules/.bin/webpack
+ENV NODE_ENV=production
+
+RUN ./node_modules/.bin/webpack
 
 EXPOSE 80
