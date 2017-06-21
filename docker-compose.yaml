@@ -116,6 +116,7 @@ services:
       - ./frontend/js:/home/app/js
       - ./frontend/css:/home/app/css
       - ./frontend/img:/home/app/img
+      - ./frontend/package.json:/home/app/package.json
     ports:
     # internal and external port must be the same to keep websockets work
       - 80:80
