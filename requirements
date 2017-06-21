@@ -1,33 +1,28 @@
 # All dependencies must be frozen
 
-Django==1.11a1              # web framework, last stable version
+Django==1.11.2              # web framework, last stable version
 
 six==1.10.0                 # core for py2+3 <- Django
-pytz==2016.10               # timezones for Python <- Django
-tzlocal==1.3.0              # get local timezone
+pytz==2017.2                # timezones for Python <- Django
+tzlocal==1.4.0              # get local timezone
 
 dj-database-url==0.4.2      # database config via URL
-django-cache-url==1.3.1     # cache config via URL
+django-cache-url==2.0.0     # cache config via URL
 dj-email-url==0.0.10        # email config via URL
 
-djangorestframework==3.5.4  # REST framework
+djangorestframework==3.6.3  # REST framework
 Markdown==2.6.8             # for REST framework -- browsable API
-#django-filter==1.0.1        # for REST framework -- filtering support
-https://github.com/carltongibson/django-filter/archive/develop.tar.gz
-#django-crispy-forms==1.6.1  # for REST framework -- filter forms support
-# Use latest from dev till they fix warnings on Django 1.11
-https://github.com/django-crispy-forms/django-crispy-forms/archive/dev.tar.gz
+django-filter==1.0.4        # for REST framework -- filtering support
+django-crispy-forms==1.6.1  # for REST framework -- filter forms support
 
-psycopg2==2.6.2             # PostgreSQL connector
-django-redis==4.7.0         # django redis cache backend
+psycopg2==2.7.1             # PostgreSQL connector
+django-redis==4.8.0         # django redis cache backend
 redis==2.10.5               # redis connector
 
-Pillow==4.0.0               # image processing library
+Pillow==4.1.1               # image processing library
 olefile==0.44               # <- Pillow
 
-# Enable upstream once fixed on Alpine
-# python-magic==0.4.13        # recognize content type by content
-https://github.com/ahupp/python-magic/archive/master.tar.gz
+python-magic==0.4.13        # recognize content type by content
 
 celery==4.0.2               # background worker
 billiard==3.5.0.2           # <- celery
@@ -40,17 +35,23 @@ vine==1.1.3                 # <- celery
 # Disable for instance -- it does not track changes in all files inside Docker for Maс
 pyinotify==0.9.6            # better check code updates using inotify
 
-channels==1.0.3             # WebSockets for Django + sort of event-driven
-daphne==1.0.2               # <- channels
-asgiref==1.0.0              # <- channels
-autobahn==0.17.1            # daphne <- channels
-Twisted==16.6.0             # daphne <- channels. Use stable version here to prevent WS close
-txaio==2.6.1                # autobahn <- daphne <- channels
-zope.interface==4.3.3       # twisted <- daphne <- channels
-constantly==15.1.0          # twisted <- daphne <- channels
-incremental==16.10.1        # twisted <- daphne <- channels
+# TODO: Use pypi once released https://github.com/django/channels/issues/672
+#channels>1.1.5             # WebSockets for Django + sort of event-driven
+https://github.com/django/channels/archive/e2444308ffa756f516e4b28983058d710a78c4e5.tar.gz
 
-asgi_redis==1.0.0           # needed for daphne
+daphne==1.3.0               # <- channels
+asgiref==1.1.2              # <- channels
+autobahn==17.6.1            # daphne <- channels
+Twisted==17.5.0             # daphne <- channels. Use stable version here to prevent WS close
+Automat==0.6.0              # <- twisted
+attrs==17.2.0               # <- Automat
+hyperlink==17.2.1           # <- twisted
+txaio==2.8.0                # autobahn <- daphne <- channels
+zope.interface==4.4.2       # twisted <- daphne <- channels
+constantly==15.1.0          # twisted <- daphne <- channels
+incremental==17.5.0         # twisted <- daphne <- channels
+
+asgi-redis==1.4.2           # needed for daphne
 msgpack-python==0.4.8       # <- asgi_redis
 
 geopy==1.11.0               # geocoding / -decoding
