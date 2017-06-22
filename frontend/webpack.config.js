@@ -84,6 +84,7 @@ module.exports = {
     },
     plugins: [
         new webpack.NoEmitOnErrorsPlugin(),
+        new webpack.NamedModulesPlugin(),
         new webpack.DefinePlugin({
             NODE_ENV: JSON.stringify(NODE_ENV),
             'process.env': {
@@ -93,6 +94,7 @@ module.exports = {
         }),
         new webpack.optimize.CommonsChunkPlugin({name: "common"}),
         new ExtractTextPlugin({filename: "[name].css", allChunks: true}),
+        new webpack.optimize.ModuleConcatenationPlugin(),
     ],
     devtool: (NODE_ENV === 'development') ? 'cheap-module-source-map' : false,
     devServer: {

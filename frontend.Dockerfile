@@ -15,6 +15,6 @@ COPY frontend /home/app/
 
 ENV NODE_ENV=production
 
-RUN ./node_modules/.bin/webpack
+RUN ./node_modules/.bin/webpack  --display-optimization-bailout
 
 EXPOSE 80
