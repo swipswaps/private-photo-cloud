@@ -7,12 +7,12 @@ RUN apk --no-cache upgrade\
  && python -m pip install dumb-init==1.2\
  && apk del $PKG
 
-COPY requirements /tmp/requirements
+COPY backend/requirements.txt /tmp/
 
 RUN apk --no-cache upgrade\
  && PKG="gcc musl-dev postgresql-dev jpeg-dev openjpeg-dev zlib-dev tiff-dev freetype-dev lcms2-dev libwebp-dev"\
  && apk add --no-cache gettext postgresql libmagic exiftool jpeg openjpeg zlib tiff freetype lcms2 libwebp ffmpeg $PKG\
- && python -m pip install --no-cache-dir -r /tmp/requirements\
+ && python -m pip install --no-cache-dir -r /tmp/requirements.txt\
  && touch /usr/local/lib/python3.6/site-packages/zope/__init__.py\
  && apk del $PKG
 
