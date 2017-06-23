@@ -38,7 +38,7 @@
     "normalize-css": "^2.3.1",
     "optipng-bin": "^4.0.0",
     "pngquant-bin": "^3.1.1",
-    "postcss": "^6.0.2",
+    "postcss": "^6.0.3",
     "postcss-color-short": "^0.2.4",
     "postcss-focus": "^2.0.0",
     "postcss-loader": "^2.0.6",
