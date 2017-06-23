@@ -9,6 +9,8 @@ from tzlocal import get_localzone
 DEBUG = (os.environ.get('DJANGO_DEBUG') == '1')
 TEMPLATES[0]['OPTIONS']['debug'] = (os.environ.get('DJANGO_TEMPLATE_DEBUG') == '1')
 
+locals().pop('TEMPLATE_DEBUG', None)
+
 
 # TODO: Investigate why connections leak with PostgreSQL-alpine + Python 3.6.0rc1 + Django pre-1.11: conn_max_age=600
 DATABASES['default'] = dj_database_url.config()
@@ -23,7 +25,8 @@ SESSION_CACHE_ALIAS = "persistent"
 
 locals().update(dj_email_url.config())
 
-TIME_ZONE = get_localzone().zone
+# TIME_ZONE = get_localzone().zone
+TIME_ZONE = 'UTC'   # Inside container is always UTC
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -81,8 +84,6 @@ CELERY_IMPORTS = [
     'processing.tasks',
 ]
 
-
-TIME_ZONE = 'Europe/Berlin'
 
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
@@ -163,3 +164,7 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100,
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
 }
+
+import yaml
+
+locals().update({k[7:]: yaml.safe_load(v) for k, v in os.environ.items() if k.startswith('DJANGO_')})
