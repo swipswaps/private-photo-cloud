@@ -40,7 +40,7 @@ services:
       DJANGO_TEMPLATE_DEBUG: 1
       DJANGO_WS_PORT: 8001
     volumes:
-      - .:/home/app
+      - ./backend:/home/app
       - ./media:/home/app/media
     working_dir: /home/app
     restart: unless-stopped
