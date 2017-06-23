@@ -12,7 +12,7 @@ module.exports = {
         common: ["react", "react-dom"]
     },
     output: {
-        path: path.resolve(__dirname, "public"),
+        path: path.resolve(__dirname, "..", "public"),
         publicPath: "/static/public/",
         filename: "[name].js",
         chunkFilename: "[id].js",

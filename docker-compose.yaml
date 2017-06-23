@@ -39,9 +39,12 @@ services:
       DJANGO_DEBUG: 1
       DJANGO_TEMPLATE_DEBUG: 1
       DJANGO_WS_PORT: 8001
+      DJANGO_MEDIA_ROOT: /home/media
+      DJANGO_STATIC_ROOT: /home/static
     volumes:
       - ./backend:/home/app
-      - ./media:/home/app/media
+      - ./static:/home/static
+      - ./media:/home/media
     working_dir: /home/app
     restart: unless-stopped
     command:
@@ -112,8 +115,9 @@ services:
       - ./frontend/js:/home/app/js
       - ./frontend/css:/home/app/css
       - ./frontend/img:/home/app/img
+      - ./static/public:/home/public
       - ./frontend/package.json:/home/app/package.json
-      - ./frontend/webpack.config.jso:/home/app/webpack.config.jso
+      - ./frontend/webpack.config.js:/home/app/webpack.config.js
     ports:
     # internal and external port must be the same to keep websockets work
       - 80:80
