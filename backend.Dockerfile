@@ -18,4 +18,9 @@ RUN apk --no-cache upgrade\
 
 # Touch above is a workaround for https://github.com/zopefoundation/zope.interface/issues/68
 
+ENV PYTHONUNBUFFERED=1\
+ PYTHONIOENCODING=utf-8\
+ PYTHONDONTWRITEBYTECODE=1\
+ PYTHONWARNINGS=all
+
 ENTRYPOINT ["/usr/local/bin/dumb-init", "--verbose", "--single-child"]
