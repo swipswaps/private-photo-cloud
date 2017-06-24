@@ -43,7 +43,7 @@ https://github.com/django/channels/archive/e2444308ffa756f516e4b28983058d710a78c
 
 daphne==1.3.0               # <- channels
 asgiref==1.1.2              # <- channels
-autobahn==17.6.1            # daphne <- channels
+autobahn==17.6.2            # daphne <- channels
 Twisted==17.5.0             # daphne <- channels. Use stable version here to prevent WS close
 Automat==0.6.0              # <- twisted
 attrs==17.2.0               # <- Automat
