@@ -1,62 +1,42 @@
-# All dependencies must be frozen
+# Only packages that we use ourselves. All sub-requrements are frozen in packages.txt
 
-Django==1.11.2              # web framework, last stable version
+dumb-init>=1.2              # kill signals handler
+uWSGI>=2.0                  # app server for Python and nginx
 
-six==1.10.0                 # core for py2+3 <- Django
-pytz==2017.2                # timezones for Python <- Django
-tzlocal==1.4.0              # get local timezone
+psycopg2>=2.7               # PostgreSQL connector
+redis>=2.10                 # redis connector; redis backend for celery
 
-dj-database-url==0.4.2      # database config via URL
-django-cache-url==2.0.0     # cache config via URL
-dj-email-url==0.0.10        # email config via URL
+PyYAML>=3.12                # YAML
+ujson>=1.15                 # JSON
+msgpack-python>=0.4         # msgpack
 
-djangorestframework==3.6.3  # REST framework
-Markdown==2.6.8             # for REST framework -- browsable API
-django-filter==1.0.4        # for REST framework -- filtering support
-django-crispy-forms==1.6.1  # for REST framework -- filter forms support
+Pillow>=4.1                 # image processing library; disabled LIBIMAGEQUANT since pngquant is missing in Alpine 3.6
 
-psycopg2==2.7.1             # PostgreSQL connector
-django-redis==4.8.0         # django redis cache backend
-redis==2.10.5               # redis connector
-
-Pillow==4.1.1               # image processing library
-olefile==0.44               # <- Pillow
-
-PyYAML==3.12                # YAML
-
-python-magic==0.4.13        # recognize content type by content
-
-celery==4.0.2               # background worker
-billiard==3.5.0.2           # <- celery
-redis==2.10.5               # <- celery
-kombu==4.0.2                # <- celery
-amqp==2.1.4                 # <- celery
-vine==1.1.3                 # <- celery
+python-magic>=0.4.13        # recognize content type by content
+geopy>=1.11                 # geocoding / -decoding
 
 # DEV #
 # Disable for instance -- it does not track changes in all files inside Docker for Maс
-pyinotify==0.9.6            # better check code updates using inotify
+pyinotify>=0.9              # better check code updates using inotify
+
+celery>=4.0                 # background worker
+
+Django>=1.11,<2.0           # web framework, last stable version
+
+dj-database-url>=0.4        # database config via URL
+django-cache-url>=2.0       # cache config via URL
+dj-email-url>=0.0.10        # email config via URL
+django-redis>=4.8           # django redis cache backend
+
+djangorestframework>=3.6    # REST framework
+Markdown>=2.6               # optional for djangorestframework: Markdown support for the browsable API
+django-filter>=1.0          # optional for djangorestframework: filtering support
+django-crispy-forms>=1.6    # optional for djangorestframework: Improved HTML display for filtering
 
 # TODO: Use pypi once released https://github.com/django/channels/issues/672
 #channels>1.1.5             # WebSockets for Django + sort of event-driven
 https://github.com/django/channels/archive/e2444308ffa756f516e4b28983058d710a78c4e5.tar.gz
-
-daphne==1.3.0               # <- channels
-asgiref==1.1.2              # <- channels
-autobahn==17.6.2            # daphne <- channels
-Twisted==17.5.0             # daphne <- channels. Use stable version here to prevent WS close
-Automat==0.6.0              # <- twisted
-attrs==17.2.0               # <- Automat
-hyperlink==17.2.1           # <- twisted
-txaio==2.8.0                # autobahn <- daphne <- channels
-zope.interface==4.4.2       # twisted <- daphne <- channels
-constantly==15.1.0          # twisted <- daphne <- channels
-incremental==17.5.0         # twisted <- daphne <- channels
-
-asgi-redis==1.4.2           # needed for daphne
-msgpack-python==0.4.8       # <- asgi_redis
-
-geopy==1.11.0               # geocoding / -decoding
+asgi-redis>=1.4             # optional for daphne (channels): redis backend for asgi
 
 # TODO: Install GeoDjango, including GDAL (missing from Alpine)
 
