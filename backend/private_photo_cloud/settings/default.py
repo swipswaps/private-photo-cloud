@@ -21,6 +21,7 @@ SESSION_CACHE_ALIAS = "persistent"
 
 locals().update(dj_email_url.config())
 
+# pip install tzlocal
 # from tzlocal import get_localzone
 # TIME_ZONE = get_localzone().zone
 TIME_ZONE = 'UTC'   # Inside container is always UTC
