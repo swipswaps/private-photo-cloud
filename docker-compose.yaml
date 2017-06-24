@@ -37,7 +37,7 @@ services:
       # CELERY_RESULT_URL: redis://redis/3
       DJANGO_SETTINGS_MODULE: private_photo_cloud.settings.default
       DJANGO_DEBUG: 1
-      DJANGO_TEMPLATE_DEBUG: 1
+      DJANGO_TEMPLATE_OPTIONS_DEBUG: 1
       DJANGO_WS_PORT: 8001
       DJANGO_MEDIA_ROOT: /home/media
       DJANGO_STATIC_ROOT: /home/static

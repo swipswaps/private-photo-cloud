@@ -4,13 +4,9 @@ import django_cache_url
 import dj_email_url
 
 from .factory_defaults import *
-from tzlocal import get_localzone
 
 DEBUG = (os.environ.get('DJANGO_DEBUG') == '1')
-TEMPLATES[0]['OPTIONS']['debug'] = (os.environ.get('DJANGO_TEMPLATE_DEBUG') == '1')
-
-locals().pop('TEMPLATE_DEBUG', None)
-
+TEMPLATES[0]['OPTIONS']['debug'] = (os.environ.get('DJANGO_TEMPLATE_OPTIONS_DEBUG') == '1')
 
 # TODO: Investigate why connections leak with PostgreSQL-alpine + Python 3.6.0rc1 + Django pre-1.11: conn_max_age=600
 DATABASES['default'] = dj_database_url.config()
@@ -25,6 +21,7 @@ SESSION_CACHE_ALIAS = "persistent"
 
 locals().update(dj_email_url.config())
 
+# from tzlocal import get_localzone
 # TIME_ZONE = get_localzone().zone
 TIME_ZONE = 'UTC'   # Inside container is always UTC
 
